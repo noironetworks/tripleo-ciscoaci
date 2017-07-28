@@ -1,0 +1,68 @@
+heat_template_version: 2016-04-08
+
+description: >
+  OpenStack Neutron Compute Cisco ACI plugin
+
+parameters:
+  ServiceNetMap:
+    default: {}
+    description: Mapping of service_name -> network name. Typically set
+                 via parameter_defaults in the resource registry.  This
+                 mapping overrides those in ServiceNetMapDefaults.
+    type: json
+  DefaultPasswords:
+    default: {}
+    type: json
+  EndpointMap:
+    default: {}
+    description: Mapping of service endpoint -> protocol. Typically set
+                 via parameter_defaults in the resource registry.
+    type: json
+  ACIApicSystemId:
+    type: string
+    default: 'aci_openstack'
+  ACIApicInfraVlan:
+    type: number
+    default: 4093
+  ACIApicInfraSubnetGateway:
+    type: string
+    default: '10.0.0.30'
+  ACIApicInfraAnycastAddr:
+    type: string
+    default: '10.0.0.32'
+  ACIOpflexOVSBridge:
+    type: string
+    default: 'br-int'
+  ACIOpflexUplinkInterface:
+    type: string
+    default: 'nic1'
+  ACIOpflexEncapMode:
+    type: string
+    default: 'vxlan'  
+    constraints:
+      - allowed_values: ['vlan', 'vxlan']
+resources:
+  NeutronBase:
+    type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
+    properties:
+      ServiceNetMap: {get_param: ServiceNetMap}
+      DefaultPasswords: {get_param: DefaultPasswords}
+      EndpointMap: {get_param: EndpointMap}
+
+outputs:
+  role_data:
+    description: Role data for the Neutron compute Cisco ACI plugin
+    value:
+      service_name: neutron_plugin_compute_ciscoaci
+      config_settings:
+        map_merge:
+          - get_attr: [NeutronBase, role_data, config_settings]
+            ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
+            ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
+            ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}    
+            ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
+            ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::opflex::aci_opflex_ovs_bridge: {get_param: ACIOpflexOVSBridge}
+      step_config: |
+        include tripleo::profile::base::ciscoaci_compute

@@ -1,0 +1,159 @@
+heat_template_version: 2016-04-08
+
+description: >
+  OpenStack Neutron Cisco ACI plugin
+
+parameters:
+  ServiceNetMap:
+    default: {}
+    description: Mapping of service_name -> network name. Typically set
+                 via parameter_defaults in the resource registry.  This
+                 mapping overrides those in ServiceNetMapDefaults.
+    type: json
+  DefaultPasswords:
+    default: {}
+    type: json
+  EndpointMap:
+    default: {}
+    description: Mapping of service endpoint -> protocol. Typically set
+                 via parameter_defaults in the resource registry.
+    type: json
+  ACIApicHosts:
+    default: {}
+    description: APIC ip address
+    type: string
+    default: 1.1.1.1
+  ACIApicUsername:
+    type: string
+    default: admin
+  ACIApicPassword:
+    type: string
+    default: 'password'
+  ACIApicSystemId:
+    type: string
+    default: 'aci_openstack'
+  ACIApicInfraVlan:
+    type: number
+    default: 4093
+  ACIApicEntityProfile:
+    type: string
+    default: 'openstack-aep'
+  ACIApicInfraSubnetGateway:
+    type: string
+    default: '10.0.0.30'
+  ACIApicInfraAnycastAddr:
+    type: string
+    default: '10.0.0.32'
+  ACIOpflexOVSBridge:
+    type: string
+    default: 'br-int'
+  ACIOpflexUplinkInterface:
+    type: string
+    default: 'nic1'
+  ACIOpflexBridgeToPatch:
+    type: string
+    default: 'br-ex'
+    description: >
+     When opflex is used in VLAN encap mode, the interface connected to ACI fabric should
+     be part of integration bridge br-int. In some network configuration, the interface could
+     already be part of other bridge for example br-ex. Setting this value to br-ex will create
+     a patch interface between br-int and br-ex. If set to empty string, no patch will be created
+  ACIOpflexEncapMode:
+    type: string
+    default: 'vxlan'  
+    constraints:
+      - allowed_values: ['vlan', 'vxlan']
+  ACIOpflexVlanRange:
+    default: ''
+    description: >
+      The vlan ranges to use when encap mode is vlan. If ACIOpflexEncapMode is vxlan, this option is
+      ignored
+    type: comma_delimited_list
+  ACIVpcPairs:
+    type: string
+    default: ''
+    description: comma separated string of switch id's which form vpc pairs. Example '101:102,103:104'
+  ACIOptimizedMetadata:
+    type: boolean
+    default: true
+    description: Enable Optimized Metadata service
+  NeutronPassword:
+    description: The password for the neutron service and db account, used by neutron agents.
+    type: string
+    hidden: true
+  RabbitPassword:
+    description: The password for RabbitMQ
+    type: string
+    hidden: true
+  RabbitUserName:
+    default: guest
+    description: The username for RabbitMQ
+    type: string
+  RabbitClientPort:
+    default: 5672
+    description: Set rabbit subscriber port, change this if using SSL
+    type: number
+  NeutronNetworkVLANRanges:
+    default: ''
+    description: >
+      Use this option if using hierarchial portbinding. This value will be
+      plugged into ml2_type_vlan section of plugin.ini if it is not blank
+      example value datacentre:1000:2000
+    type: comma_delimited_list
+resources:
+  NeutronBase:
+    type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
+    properties:
+      ServiceNetMap: {get_param: ServiceNetMap}
+      DefaultPasswords: {get_param: DefaultPasswords}
+      EndpointMap: {get_param: EndpointMap}
+
+outputs:
+  role_data:
+    description: Role data for the Neutron Cisco ACI plugin
+    value:
+      service_name: neutron_plugin_ciscoaci
+      config_settings:
+        map_merge:
+          - get_attr: [NeutronBase, role_data, config_settings]
+          - ciscoaci::aim_config::neutron_sql_connection:
+              list_join:
+                - ''
+                - - {get_param: [EndpointMap, MysqlInternal, protocol]}
+                  - '://neutron:'
+                  - {get_param: NeutronPassword}
+                  - '@'
+                  - {get_param: [EndpointMap, MysqlInternal, host]}
+                  - '/ovs_neutron'
+                  - '?bind_address='
+                  - "%{hiera('tripleo::profile::base::database::mysql::client_bind_address')}"
+            ciscoaci::aim_config::aci_apic_hosts: {get_param: ACIApicHosts}
+            ciscoaci::aim_config::aci_apic_username: {get_param: ACIApicUsername}
+            ciscoaci::aim_config::aci_apic_password: {get_param: ACIApicPassword}
+            ciscoaci::aim::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::aim_config::aci_apic_aep: {get_param: ACIApicEntityProfile}
+            ciscoaci::aim_config::aci_vpc_pairs: {get_param: ACIVpcPairs}
+            ciscoaci::aim_config::aci_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::aim_config::aci_opflex_vlan_range: {get_param: ACIOpflexVlanRange}
+            ciscoaci::aim::aci_optimized_metadata: {get_param: ACIOptimizedMetadata}
+            ciscoaci::aim::keystone_auth_admin_url: { get_param: [ EndpointMap, NeutronAdmin, uri ] }
+            ciscoaci::aim::keystone_auth_password: {get_param: NeutronPassword}
+            ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
+            ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
+            ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}    
+            ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
+            ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::opflex::aci_opflex_ovs_bridge: {get_param: ACIOpflexOVSBridge}
+            ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
+            ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
+            ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
+            ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
+            ciscoaci::aim::neutron_network_vlan_ranges:
+              str_replace:
+                template: RANGES
+                params:
+                  RANGES: {get_param: NeutronNetworkVLANRanges}
+      step_config: |
+        include tripleo::profile::base::ciscoaci

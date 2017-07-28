@@ -1,0 +1,37 @@
+heat_template_version: 2014-10-16
+
+parameters:
+  server:
+    description: ID of the controller node to apply this config to
+    type: string
+  ACIYumRepo:
+    type: string
+
+resources:
+  NodeConfig:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      inputs:
+      - name: yum_repo
+      config: |
+        #!/bin/sh
+        echo "[aci-repo]" > /etc/yum.repos.d/ciscoaci.repo
+        echo "name=Cisco ACI repository" >>/etc/yum.repos.d/ciscoaci.repo
+        echo "baseurl=$yum_repo" >>/etc/yum.repos.d/ciscoaci.repo
+        echo "enabled=1" >>/etc/yum.repos.d/ciscoaci.repo
+        echo "gpgcheck=0" >>/etc/yum.repos.d/ciscoaci.repo
+        yum update
+        yum -y install ciscoaci-puppet
+  NodeDeployment:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+       name: NodeDeployment
+       config: {get_resource: NodeConfig}
+       server: {get_param: server}
+       input_values:
+          yum_repo: {get_param: ACIYumRepo}
+outputs:
+  deploy_stdout:
+    description: Deployment reference, used to trigger post-deploy on changes
+    value: {get_attr: [NodeDeployment, deploy_stdout]}
