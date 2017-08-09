@@ -1,0 +1,37 @@
+# A Heat environment file which can be used to enable a
+# a Neutron Cisco Aci backend on the controller, configured via puppet
+resource_registry:
+  #controller
+  OS::TripleO::ControllerExtraConfigPre: /opt/tripleo-ciscoaci/nodepre.yaml
+  OS::TripleO::Services::NeutronL3Agent: OS::Heat::None
+  OS::TripleO::Services::NeutronOvsAgent: OS::Heat::None
+  OS::TripleO::Services::NeutronCorePlugin: OS::TripleO::Services::NeutronCorePluginCiscoAci
+  OS::TripleO::Services::NeutronCorePluginCiscoAci: /opt/tripleo-ciscoaci/ciscoaci.yaml
+  OS::TripleO::Services::HorizonCiscoAci: /opt/tripleo-ciscoaci/ciscoaci_horizon.yaml
+  OS::TripleO::Services::HeatCiscoAci: /opt/tripleo-ciscoaci/ciscoaci_heat.yaml
+  #compute
+  OS::TripleO::ComputeExtraConfigPre: /opt/tripleo-ciscoaci/nodepre.yaml
+  OS::TripleO::Services::ComputeNeutronOvsAgent: OS::Heat::None
+  OS::TripleO::Services::ComputeNeutronCorePlugin: /opt/tripleo-ciscoaci/ciscoaci_compute.yaml
+  OS::TripleO::Services::ComputeNeutronMetadataAgent: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-metadata.yaml
+
+parameter_defaults:
+  ComputeCount: 1
+  GlanceBackend: 'file'
+  NeutronCorePlugin: 'ml2plus'
+  NeutronServicePlugins: 'group_policy,ncp,apic_aim_l3'
+  NeutronEnableIsolatedMetadata: true
+  EnablePackageInstall: true
+  ACIYumRepo: http://1.11.1.1/acirepo
+  ACIApicHosts: 1.1.1.1
+  4CIApicUsername: admin
+  ACIApicPassword: noir0123
+  ACIApicSystemId: osd10_composable
+  ACIApicEntityProfile: f-aep
+  ACIApicInfraVlan: 3901
+  ACIApicInfraSubnetGateway: 10.0.0.30
+  ACIApicInfraAnycastAddr: 10.0.0.32
+  ACIOpflexUplinkInterface: nic2
+  ACIOpflexEncapMode: vlan
+  #NeutronNetworkVLANRanges: datacentre:1000:1020
+  ACIOpflexVlanRange: 1200:1300

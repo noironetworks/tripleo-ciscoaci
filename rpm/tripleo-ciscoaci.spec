@@ -39,6 +39,7 @@ cp /opt/tripleo-ciscoaci/files/service-ciscoaci-compute.yaml /opt/tripleo-ciscoa
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci-horizon.yaml /opt/tripleo-ciscoaci/ciscoaci_horizon.yaml
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci-heat.yaml /opt/tripleo-ciscoaci/ciscoaci_heat.yaml
 cp /opt/tripleo-ciscoaci/files/nodepre.yaml /opt/tripleo-ciscoaci/nodepre.yaml
+cp /opt/tripleo-ciscoaci/files/example_ciscoaci.yaml /opt/tripleo-ciscoaci/example_ciscoaci.yaml
 
 %clean
 rm -rf $RPM_BUILD_ROOT
