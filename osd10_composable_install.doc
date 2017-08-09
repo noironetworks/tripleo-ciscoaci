@@ -131,7 +131,7 @@ parameter_defaults:
   ComputeCount: 1
   #GlanceBackend: 'file'
   NeutronCorePlugin: 'ml2plus'
-  NeutronServicePlugins: 'group_policy,servicechain,apic_aim_l3'
+  NeutronServicePlugins: 'group_policy,ncp,apic_aim_l3'
   NeutronEnableIsolatedMetadata: true
   EnablePackageInstall: true
   ACIYumRepo: http://1.11.1.1/acirepo
