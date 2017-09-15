@@ -1,5 +1,5 @@
 Name:           tripleo-ciscoaci
-Version:        10.0
+Version:        10.1
 Release:        %{?release}%{!?release:1}
 Summary:        Files for ACI tripleO patch
 License:        ASL 2.0
