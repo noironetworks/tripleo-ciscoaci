@@ -63,6 +63,7 @@ c. Create a environment file to include 'ciscoaci' plugin
        NeutronCorePlugin: 'ml2plus'
        NeutronServicePlugins: 'group_policy,servicechain,apic_aim_l3'
        NeutronEnableIsolatedMetadata: true
+       NeutronEnableForceMetadata: true
        EnablePackageInstall: true
 
        #ExtraConfigPre creates a yum repo on undercloud node.

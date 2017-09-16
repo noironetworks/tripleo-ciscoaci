@@ -21,6 +21,7 @@ parameter_defaults:
   NeutronCorePlugin: 'ml2plus'
   NeutronServicePlugins: 'group_policy,ncp,apic_aim_l3'
   NeutronEnableIsolatedMetadata: true
+  NeutronEnableForceMetadata: true
   EnablePackageInstall: true
   ACIYumRepo: http://1.11.1.1/acirepo
   ACIApicHosts: 1.1.1.1
