@@ -77,6 +77,14 @@ parameters:
     type: boolean
     default: true
     description: Enable Optimized Metadata service
+  ACIScopeNames:
+    type: boolean
+    default: false
+    description: Enable scoping of names with apic_system_id
+  ACIScopeInfra:
+    type: boolean
+    default: false
+    description: Enable scoping of Infra names with apic_system_id
   NeutronPassword:
     description: The password for the neutron service and db account, used by neutron agents.
     type: string
@@ -137,6 +145,8 @@ outputs:
             ciscoaci::aim_config::aci_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::aim_config::aci_opflex_vlan_range: {get_param: ACIOpflexVlanRange}
             ciscoaci::aim::aci_optimized_metadata: {get_param: ACIOptimizedMetadata}
+            ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
+            ciscoaci::aim_config::aci_scope_infra: {get_param: ACIScopeInfra}
             ciscoaci::aim::keystone_auth_admin_url: { get_param: [ EndpointMap, NeutronAdmin, uri ] }
             ciscoaci::aim::keystone_auth_password: {get_param: NeutronPassword}
             ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
