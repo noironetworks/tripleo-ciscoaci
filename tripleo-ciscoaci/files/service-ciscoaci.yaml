@@ -115,6 +115,14 @@ parameters:
       plugged into ml2_type_vlan section of plugin.ini if it is not blank
       example value datacentre:1000:2000
     type: comma_delimited_list
+  NeutronPhysicalDevMappings:
+    description: >
+      List of <physical_network>:<physical device>
+      All physical networks listed in network_vlan_ranges
+      on the server should have mappings to appropriate
+      interfaces on each agent.
+    type: comma_delimited_list
+    default: ""
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -179,5 +187,6 @@ outputs:
                 template: RANGES
                 params:
                   RANGES: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
       step_config: |
         include tripleo::profile::base::ciscoaci
