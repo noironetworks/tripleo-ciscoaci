@@ -38,6 +38,12 @@ parameters:
   ACIApicEntityProfile:
     type: string
     default: 'openstack-aep'
+  ACIMechanismDrivers:
+    type: string
+    default: 'apic_aim'
+    description: >
+     set the value to the ml2 drivers required. In most cases the default is sufficient,
+     in cases when using sriov for example set it to 'sriovnicswitch,apic_aim'
   ACIApicInfraSubnetGateway:
     type: string
     default: '10.0.0.30'
@@ -69,6 +75,15 @@ parameters:
       The vlan ranges to use when encap mode is vlan. If ACIOpflexEncapMode is vxlan, this option is
       ignored
     type: comma_delimited_list
+  ACIUseLldp:
+    type: boolean
+    default: true
+    description: >
+      When true, use lldp to discover host links that are connected to aci fabric.
+      if set to false, ACIHostLinks needs to be set to describe the host connectivity to fabric
+  ACIHostLinks:
+    type: json
+    default: {}
   ACIVpcPairs:
     type: string
     default: ''
@@ -108,6 +123,14 @@ parameters:
       plugged into ml2_type_vlan section of plugin.ini if it is not blank
       example value datacentre:1000:2000
     type: comma_delimited_list
+  NeutronPhysicalDevMappings:
+    description: >
+      List of <physical_network>:<physical device>
+      All physical networks listed in network_vlan_ranges
+      on the server should have mappings to appropriate
+      interfaces on each agent.
+    type: comma_delimited_list
+    default: ""
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -142,13 +165,17 @@ outputs:
             ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
             ciscoaci::aim_config::aci_apic_aep: {get_param: ACIApicEntityProfile}
             ciscoaci::aim_config::aci_vpc_pairs: {get_param: ACIVpcPairs}
+            ciscoaci::aim_config::use_lldp_discovery: {get_param: ACIUseLldp}
+            ciscoaci::aim::use_lldp_discovery: {get_param: ACIUseLldp}
             ciscoaci::aim_config::aci_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::aim_config::aci_opflex_vlan_range: {get_param: ACIOpflexVlanRange}
+            ciscoaci::aim_config::aci_host_links: {get_param: ACIHostLinks}
             ciscoaci::aim::aci_optimized_metadata: {get_param: ACIOptimizedMetadata}
             ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
             ciscoaci::aim_config::aci_scope_infra: {get_param: ACIScopeInfra}
             ciscoaci::aim::keystone_auth_admin_url: { get_param: [ EndpointMap, NeutronAdmin, uri ] }
             ciscoaci::aim::keystone_auth_password: {get_param: NeutronPassword}
+            ciscoaci::aim::aci_mechanism_drivers: {get_param: ACIMechanismDrivers}
             ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
             ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
             ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
@@ -165,5 +192,11 @@ outputs:
                 template: RANGES
                 params:
                   RANGES: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::neutron_network_vlan_ranges:
+              str_replace:
+                template: RANGES
+                params:
+                  RANGES: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
       step_config: |
         include tripleo::profile::base::ciscoaci
