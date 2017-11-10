@@ -21,6 +21,7 @@ resources:
         echo "baseurl=$yum_repo" >>/etc/yum.repos.d/ciscoaci.repo
         echo "enabled=1" >>/etc/yum.repos.d/ciscoaci.repo
         echo "gpgcheck=0" >>/etc/yum.repos.d/ciscoaci.repo
+        echo "proxy=_none_" >>/etc/yum.repos.d/ciscoaci.repo
         yum -y clean all
         yum -y install ciscoaci-puppet
   NodeDeployment:
