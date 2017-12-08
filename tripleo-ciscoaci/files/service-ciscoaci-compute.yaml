@@ -30,12 +30,17 @@ parameters:
   ACIApicInfraAnycastAddr:
     type: string
     default: '10.0.0.32'
-  ACIOpflexOVSBridge:
-    type: string
-    default: 'br-int'
   ACIOpflexUplinkInterface:
     type: string
     default: 'nic1'
+  ACIOpflexBridgeToPatch:
+    type: string
+    default: 'br-ex'
+    description: >
+     When opflex is used in VLAN encap mode, the interface connected to ACI fabric should
+     be part of integration bridge br-int. In some network configuration, the interface could
+     already be part of other bridge for example br-ex. Setting this value to br-ex will create
+     a patch interface between br-int and br-ex. If set to empty string, no patch will be created
   ACIOpflexEncapMode:
     type: string
     default: 'vxlan'  
@@ -69,7 +74,7 @@ outputs:
             ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}    
             ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
-            ciscoaci::opflex::aci_opflex_ovs_bridge: {get_param: ACIOpflexOVSBridge}
+            ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
             ciscoaci::compute::use_lldp_discovery: {get_param: ACIUseLldp}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute
