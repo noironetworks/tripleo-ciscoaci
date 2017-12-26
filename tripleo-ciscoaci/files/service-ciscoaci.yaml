@@ -139,6 +139,12 @@ parameters:
     default: true
     description: >
       When true, act on keystone notifications to purge
+  AciOpenvswitch:
+    type: boolean
+    default: false
+  AciTenantNetworkType:
+    type: string
+    default: 'opflex'
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -193,22 +199,16 @@ outputs:
             ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
+            ciscoaci::aim::use_openvswitch: {get_param: AciOpenvswitch}
             ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
-            ciscoaci::aim::neutron_network_vlan_ranges:
-              str_replace:
-                template: RANGES
-                params:
-                  RANGES: {get_param: NeutronNetworkVLANRanges}
-            ciscoaci::aim_config::neutron_network_vlan_ranges:
-              str_replace:
-                template: RANGES
-                params:
-                  RANGES: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
             ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
             ciscoaci::aim::opflex_endpoint_request_timeout: {get_param: OpflexEndpointReqTimeout}
             ciscoaci::aim::opflex_nat_mtu_size: {get_param: OpflexNatMtuSize}
             ciscoaci::aim::enable_keystone_notification_purge: {get_param:  AciKeystoneNotificationPurge}
+            ciscoaci::aim::tenant_network_types: {get_param: AciTenantNetworkType}
       step_config: |
         include tripleo::profile::base::ciscoaci
