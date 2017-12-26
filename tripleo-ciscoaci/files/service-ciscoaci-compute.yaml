@@ -52,6 +52,9 @@ parameters:
     description: >
       When true, use lldp to discover host links that are connected to aci fabric.
       if set to false, ACIHostLinks needs to be set to describe the host connectivity to fabric
+  AciOpenvswitch:
+    type: boolean
+    default: false
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -76,5 +79,6 @@ outputs:
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
             ciscoaci::compute::use_lldp_discovery: {get_param: ACIUseLldp}
+            ciscoaci::compute::use_openvswitch: {get_param: AciOpenvswitch}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute
