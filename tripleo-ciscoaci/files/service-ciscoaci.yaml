@@ -145,6 +145,9 @@ parameters:
   AciTenantNetworkType:
     type: string
     default: 'opflex'
+  IntelCnaNicDisableLLDP:
+    type: boolean
+    default: true
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -210,5 +213,6 @@ outputs:
             ciscoaci::aim::opflex_nat_mtu_size: {get_param: OpflexNatMtuSize}
             ciscoaci::aim::enable_keystone_notification_purge: {get_param:  AciKeystoneNotificationPurge}
             ciscoaci::aim::tenant_network_types: {get_param: AciTenantNetworkType}
+            ciscoaci::aim::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
       step_config: |
         include tripleo::profile::base::ciscoaci
