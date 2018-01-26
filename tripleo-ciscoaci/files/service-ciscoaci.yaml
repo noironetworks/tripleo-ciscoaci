@@ -196,16 +196,8 @@ outputs:
             ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
-            ciscoaci::aim::neutron_network_vlan_ranges:
-              str_replace:
-                template: RANGES
-                params:
-                  RANGES: {get_param: NeutronNetworkVLANRanges}
-            ciscoaci::aim_config::neutron_network_vlan_ranges:
-              str_replace:
-                template: RANGES
-                params:
-                  RANGES: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
             ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
             ciscoaci::aim::opflex_endpoint_request_timeout: {get_param: OpflexEndpointReqTimeout}
             ciscoaci::aim::opflex_nat_mtu_size: {get_param: OpflexNatMtuSize}
