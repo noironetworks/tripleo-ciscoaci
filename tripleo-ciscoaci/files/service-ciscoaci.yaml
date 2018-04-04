@@ -203,6 +203,7 @@ outputs:
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
             ciscoaci::aim::use_openvswitch: {get_param: AciOpenvswitch}
+            ciscoaci::aim_config::use_openvswitch: {get_param: AciOpenvswitch}
             ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
