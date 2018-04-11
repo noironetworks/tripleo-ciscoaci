@@ -1,5 +1,5 @@
 Name:           tripleo-ciscoaci
-Version:        11.0
+Version:        12.0
 Release:        %{?release}%{!?release:1}
 Summary:        Files for ACI tripleO patch
 License:        ASL 2.0
@@ -32,12 +32,12 @@ createrepo /var/www/html/acirepo
 if [ "$1" = "1" ]; then
 
    #install scenario
-   cp /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.rpmsave
-   cat /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml | awk '{print} /OS::TripleO::Services::NeutronCorePluginMidonet:/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "OS::TripleO::Services::NeutronCorePluginCiscoAci: OS::Heat::None" }' | awk '{print} /OS::TripleO::Services::HeatEngine:/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "OS::TripleO::Services::HeatApiCiscoAci: OS::Heat::None" }' | awk '{print} /OS::TripleO::Services::Horizon/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "OS::TripleO::Services::HorizonCiscoAci: OS::Heat::None" }' > /tmp/.modified_registry
-   cp /tmp/.modified_registry /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml
-   cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave
-   cat /usr/share/openstack-tripleo-heat-templates/roles_data.yaml | awk '{print} /- OS::TripleO::Services::Horizon/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "- OS::TripleO::Services::HorizonCiscoAci" }' | awk '{print} /- OS::TripleO::Services::HeatEngine/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "- OS::TripleO::Services::HeatCiscoAci" }' > /tmp/.modified_roles
-   cp /tmp/.modified_roles /usr/share/openstack-tripleo-heat-templates/roles_data.yaml
+   #cp /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.rpmsave
+   #cat /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml | awk '{print} /OS::TripleO::Services::NeutronCorePluginMidonet:/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "OS::TripleO::Services::NeutronCorePluginCiscoAci: OS::Heat::None" }' | awk '{print} /OS::TripleO::Services::Horizon/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "OS::TripleO::Services::HorizonCiscoAci: OS::Heat::None" }' > /tmp/.modified_registry
+   #cp /tmp/.modified_registry /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml
+   #cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave
+   #cat /usr/share/openstack-tripleo-heat-templates/roles_data.yaml | awk '{print} /- OS::TripleO::Services::Horizon/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "- OS::TripleO::Services::HorizonCiscoAci" }'  > /tmp/.modified_roles
+   #cp /tmp/.modified_roles /usr/share/openstack-tripleo-heat-templates/roles_data.yaml
 
 elif [ "$1" = "2" ]; then
 
@@ -73,6 +73,8 @@ elif [ "$1" = "2" ]; then
    #/bin/rm -f /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.safe
 fi
 
+mkdir /opt/tripleo-ciscoaci/bin
+cp /opt/tripleo-ciscoaci/files/build_ciscoaci_containers.sh /opt/tripleo-ciscoaci/bin/build_ciscoaci_containers.sh
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci.yaml /opt/tripleo-ciscoaci/ciscoaci.yaml
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci-compute.yaml /opt/tripleo-ciscoaci/ciscoaci_compute.yaml
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci-horizon.yaml /opt/tripleo-ciscoaci/ciscoaci_horizon.yaml
