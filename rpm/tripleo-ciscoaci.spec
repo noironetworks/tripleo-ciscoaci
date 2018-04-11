@@ -38,6 +38,7 @@ if [ "$1" = "1" ]; then
    #cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave
    #cat /usr/share/openstack-tripleo-heat-templates/roles_data.yaml | awk '{print} /- OS::TripleO::Services::Horizon/{ print substr($0,1,match($0,/[^[:space:]]/)-1) "- OS::TripleO::Services::HorizonCiscoAci" }'  > /tmp/.modified_roles
    #cp /tmp/.modified_roles /usr/share/openstack-tripleo-heat-templates/roles_data.yaml
+   echo ""
 
 elif [ "$1" = "2" ]; then
 
@@ -73,12 +74,10 @@ elif [ "$1" = "2" ]; then
    #/bin/rm -f /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.safe
 fi
 
-mkdir /opt/tripleo-ciscoaci/bin
+mkdir -p /opt/tripleo-ciscoaci/bin
 cp /opt/tripleo-ciscoaci/files/build_ciscoaci_containers.sh /opt/tripleo-ciscoaci/bin/build_ciscoaci_containers.sh
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci.yaml /opt/tripleo-ciscoaci/ciscoaci.yaml
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci-compute.yaml /opt/tripleo-ciscoaci/ciscoaci_compute.yaml
-cp /opt/tripleo-ciscoaci/files/service-ciscoaci-horizon.yaml /opt/tripleo-ciscoaci/ciscoaci_horizon.yaml
-cp /opt/tripleo-ciscoaci/files/service-ciscoaci-heat.yaml /opt/tripleo-ciscoaci/ciscoaci_heat.yaml
 cp /opt/tripleo-ciscoaci/files/nodepre.yaml /opt/tripleo-ciscoaci/nodepre.yaml
 cp /opt/tripleo-ciscoaci/files/example_ciscoaci.yaml /opt/tripleo-ciscoaci/example_ciscoaci.yaml
 
@@ -97,8 +96,13 @@ if [ "$1" = "0" ]; then
    /bin/rm -f /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.safe
    /bin/rm -f /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.safe
 
-   [[ -e /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave ]] && cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave /usr/share/openstack-tripleo-heat-templates/roles_data.yaml 
-   [[ -e /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.rpmsave ]] && cp /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.rpmsave /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml 
+   if [[ -e /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave ]]; then
+      cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.rpmsave /usr/share/openstack-tripleo-heat-templates/roles_data.yaml 
+   fi
+   if [[ -e /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.rpmsave ]]; then
+      cp /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.rpmsave /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml 
+   fi
+   /bin/rm -rf /opt/tripleo-ciscoaci
 elif [ "$1" = "1" ]; then
    #upgrade
    echo ""
