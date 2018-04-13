@@ -75,7 +75,8 @@ elif [ "$1" = "2" ]; then
 fi
 
 mkdir -p /opt/tripleo-ciscoaci/bin
-cp /opt/tripleo-ciscoaci/files/build_ciscoaci_containers.sh /opt/tripleo-ciscoaci/bin/build_ciscoaci_containers.sh
+cp /opt/tripleo-ciscoaci/files/ciscoaci_containers.sh /opt/tripleo-ciscoaci/bin/ciscoaci_containers.sh
+cp /opt/tripleo-ciscoaci/files/ciscoaci_aim.sh /opt/tripleo-ciscoaci/bin/ciscoaci_aim.sh
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci.yaml /opt/tripleo-ciscoaci/ciscoaci.yaml
 cp /opt/tripleo-ciscoaci/files/service-ciscoaci-compute.yaml /opt/tripleo-ciscoaci/ciscoaci_compute.yaml
 cp /opt/tripleo-ciscoaci/files/nodepre.yaml /opt/tripleo-ciscoaci/nodepre.yaml
