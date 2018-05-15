@@ -2,9 +2,43 @@
 set -eu
 
 # Process Args, use defaults for common case
-CISCOACI_YAML=${1:-'/home/stack/templates/cisco_containers.yaml'}
-CISCOACI_RPMDIR=${2:-'/var/www/html/acirepo'}
+CISCOACI_RPMDIR="/var/www/html/acirepo"
 SCRIPT_NAME=$(basename $0)
+
+OPTIND=1
+while getopts ":o:l:" key
+do
+
+case $key in
+  :)
+    echo "Invalid option: -$OPTARG requires an argument" 1>&2
+    exit 1
+    ;;
+  \?)
+    echo "Invalid option: -$OPTARG" 1>&2
+    exit 1
+    ;;
+  o)
+    if [ z"${OPTARG:0:1}" == "z-" ]; then
+      echo "output file value is missing"
+      exit 2
+    fi
+    CISCOACI_YAML=$OPTARG
+    ;;
+  l)
+    if [ z"${OPTARG:0:1}" == "z-" ]; then
+      echo "local_registry_address value is missing"
+      exit 2
+    fi
+    LOCAL_REGISTRY_ADDRESS=$OPTARG
+    ;;
+esac
+done
+  
+shift $((OPTIND-1))
+
+[ "${1:-}" = "--" ] && shift
+
 
 # functions to build images
 function build_tag_push() {
@@ -73,12 +107,31 @@ EOF
 }
 
 # main()
-echo ""
-echo "Running as: ${SCRIPT_NAME} ${CISCOACI_YAML} ${CISCOACI_RPMDIR}"
-echo ""
 
 # Local variables
-LOCAL_REGISTRY_ADDRESS=$(docker images | grep -v redhat.com | grep -o '^.*rhosp12' | sort -u)
+if [ ! -v CISCOACI_YAML ]
+  then
+   CISCOACI_YAML="/home/stack/templates/cisco_containers.yaml"
+fi
+
+if [ ! -v LOCAL_REGISTRY_ADDRESS ] 
+  then
+    REGISTRY_ADDRESS=$(docker images | grep -v redhat.com | grep -o '^.*rhosp12' | sort -u)
+    if [ -z "$REGISTRY_ADDRESS" ]
+      then
+        echo ""
+        echo "It appears that this installation is not using undercloud as a local registry, Unable to determine the local registry address"
+        echo "Please specify the local registry address. It is usually <undercloud control plane ip:8787/rhosp12>"
+        exit 1
+      else
+        LOCAL_REGISTRY_ADDRESS=$REGISTRY_ADDRESS
+    fi
+fi
+
+echo ""
+echo "Running as: ${SCRIPT_NAME} -o ${CISCOACI_YAML} -l ${LOCAL_REGISTRY_ADDRESS}"
+echo ""
+
 UPSTREAM_TAG=$(sudo openstack overcloud container image tag discover \
     --image registry.access.redhat.com/rhosp12/openstack-base:latest \
     --tag-from-label version-release)
