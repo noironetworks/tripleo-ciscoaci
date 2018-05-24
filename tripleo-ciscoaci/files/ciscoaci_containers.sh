@@ -116,7 +116,7 @@ fi
 
 if [ ! -v LOCAL_REGISTRY_ADDRESS ] 
   then
-    REGISTRY_ADDRESS=$(docker images | grep -v redhat.com | grep -o '^.*rhosp12' | sort -u)
+    REGISTRY_ADDRESS=$(sudo docker images | grep -v redhat.com | grep -o '^.*rhosp12' | sort -u)
     if [ -z "$REGISTRY_ADDRESS" ]
       then
         echo ""
