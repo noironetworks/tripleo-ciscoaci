@@ -7,8 +7,7 @@ resource_registry:
   OS::TripleO::Services::NeutronOvsAgent: OS::Heat::None
   OS::TripleO::Services::NeutronCorePlugin: OS::TripleO::Services::NeutronCorePluginCiscoAci
   OS::TripleO::Services::NeutronCorePluginCiscoAci: /opt/tripleo-ciscoaci/ciscoaci.yaml
-  OS::TripleO::Services::HorizonCiscoAci: /opt/tripleo-ciscoaci/ciscoaci_horizon.yaml
-  OS::TripleO::Services::HeatCiscoAci: /opt/tripleo-ciscoaci/ciscoaci_heat.yaml
+
   #compute
   OS::TripleO::ComputeExtraConfigPre: /opt/tripleo-ciscoaci/nodepre.yaml
   OS::TripleO::Services::ComputeNeutronOvsAgent: OS::Heat::None
