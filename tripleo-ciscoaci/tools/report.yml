@@ -1,0 +1,179 @@
+---
+- hosts: localhost
+  gather_facts: false
+  vars:
+   limit_flavors: []
+   limit_hosts: []
+   dest_file: "/home/stack/overcloud_aci_report.tgz"
+
+  tasks:
+  - name: get openstack node list
+    shell: source /home/stack/stackrc && openstack server list -f json
+    register: slist
+  
+  - set_fact:
+      sl: "{{ slist.stdout }}"
+      remove_flavor_list: []
+      exclude_host_list: []
+      dest_file: "{{ dest_file }}"
+
+  #create a list of nodes to remove based on limit_flavors var
+  - set_fact:
+      remove_flavor_list: "{{ remove_flavor_list + [item] }}"
+    when: item.Flavor not in limit_flavors and (limit_flavors|length > 0)
+    with_items: "{{ sl }}"
+  
+  - set_fact:
+      flavor_filtered_list: "{{ sl | difference(remove_flavor_list) }}"
+     
+  
+  #create a list of nodes to remove from flavor_filtered_list based on limit hosts
+  - set_fact:
+      exclude_host_list: "{{ exclude_host_list + [item] }}"
+    when: item.Name not in limit_hosts and (limit_hosts|length > 0)
+    with_items: "{{ flavor_filtered_list }}"
+
+  - set_fact:
+       final_filtered_list: "{{ flavor_filtered_list | difference(exclude_host_list) }}"
+
+  - debug:
+     msg:
+       - "Parameters passed in limit_flavors {{ limit_flavors }}, limit_hosts {{ limit_hosts }}"
+       - "final filtered list is {{ final_filtered_list }}"
+
+  - name: add controller hosts
+    add_host:
+      name: "{{ item.Name }}"
+      ansible_ssh_host: "{{ item.Networks | regex_replace('^ctlplane=(.*)$', '\\1') }}"
+      ansible_ssh_user: heat-admin
+      groups: controllers
+    when: item.Flavor == "control"
+    with_items: "{{ final_filtered_list }}"
+
+  - name: add compute hosts
+    add_host:
+      name: "{{ item.Name }}"
+      ansible_ssh_host: "{{ item.Networks | regex_replace('^ctlplane=(.*)$', '\\1') }}"
+      ansible_ssh_user: heat-admin
+      groups: computes
+    when: item.Flavor == "compute"
+    with_items: "{{ final_filtered_list }}"
+
+  - name: create temp directory to collect data
+    tempfile: 
+     state: directory
+     prefix: ciscoaci_
+    register: tempdir
+ 
+  - name: create ciscoaci subdir
+    file:
+      state: directory
+      path: "{{ tempdir.path }}/overcloud"
+    register: acidir
+
+- hosts: controllers, computes
+  user: heat-admin
+  gather_facts: false
+  vars_files:
+    - report_vars.yaml
+  tasks:
+    - name: create dir for this host under flavor
+      file: 
+        state: directory
+        path: "{{ hostvars['localhost']['acidir']['path'] }}/{{ group_names[0] }}/{{ inventory_hostname }}"
+      register: thisdir
+      delegate_to: localhost
+
+    - set_fact:
+        mydir: "{{ thisdir.path }}"
+    
+    - name: create subdirs
+      file: 
+        state: directory
+        path: "{{ mydir }}/{{ item }}"
+      with_items:
+        - system
+        - ovs
+        - neutron/config-data/puppet-generated
+        - nova/config-data/puppet-generated
+        - opflex/config-data/puppet-generated
+        - containers/config-data/puppet-generated
+        - aim/config-data/puppet-generated
+        - hieradata
+        - network
+      delegate_to: localhost
+      recurse: yes
+   
+    - name: docker cmds
+      shell: "docker exec -i {{ item.value.container }} {{ item.value.cmd }}"
+      register: docker_output
+      ignore_errors: true
+      become: true
+      with_dict: "{{ docker_cmds }}"
+
+    - name: save docker cmds output
+      copy:
+        content: "{{ item.stdout }}"
+        dest: "{{ mydir }}/{{ item.item.value.ofile }}"
+      with_items: "{{ hostvars[inventory_hostname].docker_output.results }}"
+      delegate_to: localhost
+      no_log: True
+   
+    - name: exec commands
+      shell: "{{ item.value.cmd }}"
+      register: ctrl_output
+      with_dict: "{{ commands }}"
+      ignore_errors: true
+      become: true
+##
+    - name: save exec outputs
+      copy:
+        content: "{{ item.stdout }}"
+        dest: "{{ mydir }}/{{ item.item.value.ofile }}"
+      with_items: "{{ hostvars[inventory_hostname].ctrl_output.results }}"
+      delegate_to: localhost
+      no_log: True
+
+    - name: sync common directories
+      synchronize:
+        mode: pull
+        src: "{{ item.value.rpath }}"
+        dest: "{{ mydir }}/{{ item.value.lpath }}"
+      become: true
+      with_dict: "{{ rsync_dirs }}"
+      delegate_to: localhost
+      remote_user: heat-admin
+      ignore_errors: true
+
+    - name: sync controller directories
+      synchronize:
+        mode: pull
+        src: "{{ item.value.rpath }}"
+        dest: "{{ mydir }}/{{ item.value.lpath }}"
+      become: true
+      with_dict: "{{ rsync_controller_dirs }}"
+      delegate_to: localhost
+      remote_user: heat-admin
+      ignore_errors: true
+      when: group_names[0] == "controllers"
+
+    - name: create archive
+      shell: sudo tar -czvf "{{ hostvars['localhost']['dest_file'] }}" .
+      args:
+        chdir: "{{ hostvars['localhost']['tempdir']['path'] }}"
+      #cannot use archive as it does not support ignoring missing links
+      #archive: 
+      #  path: "{{ hostvars['localhost']['tempdir']['path'] }}"
+      #  dest: "{{ hostvars['localhost']['dest_file'] }}"
+      delegate_to: localhost
+      register: arch_status
+
+    - name: remove the tmp dir
+      file:
+        path: "{{ hostvars['localhost']['tempdir']['path'] }}"
+        state: absent
+      when: arch_status.rc == 0
+      delegate_to: localhost
+      become: true
+
+    - debug: msg="The archive file is at {{ hostvars['localhost']['dest_file'] }}"

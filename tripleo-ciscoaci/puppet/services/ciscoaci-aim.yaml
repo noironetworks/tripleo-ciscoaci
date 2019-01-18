@@ -1,4 +1,4 @@
-heat_template_version: 2016-04-08
+heat_template_version: queens
 
 description: >
   OpenStack Neutron Cisco ACI plugin
@@ -156,6 +156,9 @@ parameters:
   OpflexNatMtuSize:
     default: 0
     type: number
+  OpflexLoggingLevel:
+    default: debug2
+    type: string
   AciKeystoneNotificationPurge:
     type: boolean
     default: true
@@ -183,13 +186,19 @@ parameters:
        Opflex depends on knowing what the external bridge name is, which by default is br-ex
        If neutron configuration was changed to some other name, this variable needs to be set
        to the same value.
+  OpflexLoggingLevel:
+    default: debug2
+    type: string
 resources:
-  NeutronBase:
-    type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
-    properties:
-      ServiceNetMap: {get_param: ServiceNetMap}
-      DefaultPasswords: {get_param: DefaultPasswords}
-      EndpointMap: {get_param: EndpointMap}
+  NeutronMl2Base:
+      type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-plugin-ml2.yaml
+      properties:
+        ServiceData: {get_param: ServiceData}
+        ServiceNetMap: {get_param: ServiceNetMap}
+        DefaultPasswords: {get_param: DefaultPasswords}
+        EndpointMap: {get_param: EndpointMap}
+        RoleName: {get_param: RoleName}
+        RoleParameters: {get_param: RoleParameters}
 
 outputs:
   role_data:
@@ -198,7 +207,7 @@ outputs:
       service_name: neutron_plugin_ciscoaci
       config_settings:
         map_merge:
-          - get_attr: [NeutronBase, role_data, config_settings]
+          - get_attr: [NeutronMl2Base, role_data, config_settings]
           - ciscoaci::aim_config::neutron_sql_connection:
               list_join:
                 - ''
@@ -255,5 +264,9 @@ outputs:
             ciscoaci::aim::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::aim::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+            ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
+            ciscoaci::opflex::use_lldp_discovery: {get_param: ACIUseLldp}
       step_config: |
-        include tripleo::profile::base::ciscoaci
+        include tripleo::profile::base::ciscoaci_aim
+      metadata_settings:
+        get_attr: [NeutronMl2Base, role_data, metadata_settings]

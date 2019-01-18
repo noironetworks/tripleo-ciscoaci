@@ -87,6 +87,42 @@ parameters:
        Opflex depends on knowing what the external bridge name is, which by default is br-ex
        If neutron configuration was changed to some other name, this variable needs to be set
        to the same value.
+  RabbitPassword:
+    description: The password for RabbitMQ
+    type: string
+    hidden: true
+  RabbitUserName:
+    default: guest
+    description: The username for RabbitMQ
+    type: string
+  RabbitClientUseSSL:
+    default: false
+    description: >
+        Rabbit client subscriber parameter to specify
+        an SSL connection to the RabbitMQ host.
+    type: string
+  RabbitClientPort:
+    default: 5672
+    description: Set rabbit subscriber port, change this if using SSL
+    type: number
+  NotificationDriver:
+    type: string
+    default: 'messagingv2'
+    description: Driver or drivers to handle sending notifications.
+    constraints:
+      - allowed_values: [ 'messagingv2', 'noop' ]
+  NeutronCorePlugin:
+    default: 'ml2'
+    description: |
+        The core plugin for Neutron. The value should be the entrypoint to be loaded
+        from neutron.core_plugins namespace.
+    type: string
+  NeutronServicePlugins:
+    default: "router,qos,segments,trunk"
+    description: |
+        Comma-separated list of service plugin entrypoints to be loaded from the
+        neutron.service_plugins namespace.
+    type: comma_delimited_list
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -103,6 +139,13 @@ outputs:
       config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, config_settings]
+            neutron::rabbit_password: {get_param: RabbitPassword}
+            neutron::rabbit_user: {get_param: RabbitUserName}
+            neutron::rabbit_use_ssl: {get_param: RabbitClientUseSSL}
+            neutron::rabbit_port: {get_param: RabbitClientPort}
+            neutron::notification_driver: {get_param: NotificationDriver}
+            neutron::core_plugin: {get_param: NeutronCorePlugin}
+            neutron::service_plugins: {get_param: NeutronServicePlugins}
             ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
             ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
             ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
@@ -116,5 +159,6 @@ outputs:
             ciscoaci::compute::use_openvswitch: {get_param: AciOpenvswitch}
             ciscoaci::compute::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+            ciscoaci::opflex::use_lldp_discovery: {get_param: ACIUseLldp}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute

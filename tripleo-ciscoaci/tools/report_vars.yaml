@@ -1,0 +1,173 @@
+---
+    docker_cmds:
+      lldpctl:
+        container:  ciscoaci_lldp_agent
+        cmd: lldpctl
+        ofile: aim/lldpctl
+      dmtree:
+        container: ciscoaci_opflex_agent
+        cmd: gbp_inspect -fpr -t dump -q DmtreeRoot
+        ofile: opflex/DmtreeRoot
+      ipnetns:
+        container: ciscoaci_opflex_agent
+        cmd: ip netns
+        ofile: opflex/ip-netns
+    rsync_dirs:
+      neutron:
+        rpath: /var/lib/config-data/neutron/*
+        lpath: neutron/config-data
+      opflex:
+        rpath: /var/lib/config-data/opflex/*
+        lpath: opflex/config-data
+      puppet_neutron:
+        rpath: /var/lib/config-data/puppet-generated/neutron/*
+        lpath: neutron/config-data/puppet-generated
+      puppet_opflex:
+        rpath: /var/lib/config-data/puppet-generated/opflex/*
+        lpath: opflex/config-data/puppet-generated
+      hiera:
+        rpath: /etc/puppet/hieradata
+        lpath: hieradata
+      neutron_logs:
+        rpath: /var/log/containers/neutron/*
+        lpath: neutron/logs
+      nova_logs:
+        rpath: /var/log/containers/nova/*
+        lpath: nova/logs
+      opflex_logs:
+        rpath: /var/log/containers/opflex
+        lpath: opflex/logs
+    rsync_controller_dirs:
+      aim:
+        rpath: /var/lib/config-data/aim/*
+        lpath: aim/config-data
+      puppet_aim:
+        rpath: /var/lib/config-data/puppet-generated/aim/*
+        lpath: aim/config-data/puppet-generated
+      puppet_nova:
+        rpath: /var/lib/config-data/puppet-generated/nova/*
+        lpath: nova/config-data/puppet-generated
+      aim_logs:
+        rpath: /var/log/containers/aim/*
+        lpath: aim/logs
+    commands:
+      date:
+        cmd: date
+        ofile: system/date-start
+      ps:
+        cmd: ps -eaxl
+        ofile: system/ps-eaxl
+      top:
+        cmd: top -b -n3
+        ofile: system/top
+      hostname:
+        cmd: hostname --fqdn
+        ofile: system/hostname
+      uname:
+        cmd: uname -a
+        ofile: system/uname
+      uptime:
+        cmd: uptime
+        ofile: system/uptime
+      dmesg:
+        cmd: dmesg
+        ofile: system/dmesg
+      lspci:
+        cmd: lspci
+        ofile: system/lspci
+      free:
+        cmd: free
+        ofile: system/free
+      ulimit:
+        cmd: ulimit -a
+        ofile: system/ulimit
+      meminfo:
+        cmd: cat /proc/meminfo
+        ofile: system/meminfo
+      cpuinfo:
+        cmd: cat /proc/cpuinfo
+        ofile: system/cpuinfo
+      mounts:
+        cmd: cat /proc/mounts
+        ofile: system/mounts
+      fdisk:
+        cmd: fdisk -l
+        ofile: system/fdisk
+      df:
+        cmd: df
+        ofile: system/df
+      lsmod: 
+        cmd: lsmod
+        ofile: system/lsmod
+      sysctl:
+        cmd: sysctl -a
+        ofile: system/sysctl
+      service:
+        cmd: service --status-all
+        ofile: system/service-status
+      chkconfig:
+        cmd: chkconfig --list
+        ofile: system/chkconfig
+      systemctlunits:
+        cmd: systemctl -l --no-pager list-unit-files 
+        ofile: system/systemctl-units
+      systemctlstatus:
+        cmd: systemctl -l --no-pager status 
+        ofile: system/systemctl-status
+      containerlist:
+        cmd: docker ps
+        ofile: containers/docker-ps
+      dockerimages:
+        cmd: docker images
+        ofile: containers/docker-images
+      iplink:
+        cmd: ip link
+        ofile: network/ip-link
+      ipaddr:
+        cmd: ip address
+        ofile: network/ip-address
+      iproute:
+        cmd: ip route
+        ofile: network/ip-route
+      ipnetns:
+        cmd: ip netns
+        ofile: network/ip-netns
+      igmp:
+        cmd: cat /proc/net/igmp
+        ofile: network/igmp
+      ifconfig:
+        cmd: ifconfig
+        ofile: network/ifconfig
+      netstatt:
+        cmd: netstat -tlnp
+        ofile: network/netstat-tlnp
+      netstats:
+        cmd: netstat -s
+        ofile: network/netstat-s
+      vsctlshow:
+        cmd: ovs-vsctl show
+        ofile: ovs/ovsctl-show
+      dpctlshow:
+        cmd: ovs-dpctl show
+        ofile: ovs/ovs-dp-ports
+      ofctl:
+        cmd: ovs-ofctl dump-ports-desc br-int 
+        ofile: ovs/ovs-ports
+      ofctlp:
+        cmd: ovs-ofctl dump-ports br-int 
+        ofile: ovs/ovs-ports-stats
+      ovsflows:
+        cmd: ovs-ofctl -OOpenFlow13 dump-flows br-int 
+        ofile: ovs/ovs-flows-br-int
+      ovsigmp:
+        cmd: ovs-appctl dpif/tnl/igmp-dump br-int 8472 
+        ofile: ovs/ovs-igmp
+      ovsfabports:
+        cmd: ovs-ofctl dump-ports-desc br-fabric 
+        ofile: ovs/ovs-ports-fabric
+      ovsfabstats:
+        cmd: ovs-ofctl dump-ports br-fabric 
+        ofile: ovs/ovs-ports-stats-fabric
+      ovsflows-brf:
+        cmd: ovs-ofctl -OOpenFlow13 dump-flows br-fabric 
+        ofile: ovs/ovs-flows-br-fabric

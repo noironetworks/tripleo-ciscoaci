@@ -1,0 +1,605 @@
+heat_template_version: queens
+
+description: >
+  OpenStack Cisco Aci opflex service
+
+parameters:
+  DockerOpflexAgentImage:
+    description: image
+    type: string
+  DockerNeutronConfigImage:
+    description: The container image to use for the neutron config_volume
+    type: string
+  DockerOpenvswitchUlimit:
+    default: ['nofile=1024']
+    description: ulimit for Openvswitch Container
+    type: comma_delimited_list
+  ServiceData:
+    default: {}
+    description: Dictionary packing service data
+    type: json
+  ServiceNetMap:
+    default: {}
+    description: Mapping of service_name -> network name. Typically set
+                 via parameter_defaults in the resource registry.  This
+                 mapping overrides those in ServiceNetMapDefaults.
+    type: json
+  DefaultPasswords:
+    default: {}
+    type: json
+  RoleName:
+    default: ''
+    description: Role name on which the service is applied
+    type: string
+  RoleParameters:
+    default: {}
+    description: Parameters specific to the role
+    type: json
+  EndpointMap:
+    default: {}
+    description: Mapping of service endpoint -> protocol. Typically set
+                 via parameter_defaults in the resource registry.
+    type: json
+  UpgradeRemoveUnusedPackages:
+    default: false
+    description: Remove package if the service is being disabled during upgrade
+    type: boolean
+
+resources:
+
+  ContainersCommon:
+    type: /usr/share/openstack-tripleo-heat-templates/docker/services/containers-common.yaml
+
+  OpflexAgentBase:
+    type:  /opt/ciscoaci-tripleo-heat-templates/puppet/services/opflex-agent.yaml
+    properties:
+      EndpointMap: {get_param: EndpointMap}
+      ServiceData: {get_param: ServiceData}
+      ServiceNetMap: {get_param: ServiceNetMap}
+      DefaultPasswords: {get_param: DefaultPasswords}
+      RoleName: {get_param: RoleName}
+      RoleParameters: {get_param: RoleParameters}
+
+outputs:
+  role_data:
+    description: Role data for Neutron openvswitch service
+    value:
+      service_name: {get_attr: [OpflexAgentBase, role_data, service_name]}
+      config_settings:
+        map_merge:
+          - get_attr: [OpflexAgentBase, role_data, config_settings]
+      logging_source: {get_attr: [OpflexAgentBase, role_data, logging_source]}
+      logging_groups: {get_attr: [OpflexAgentBase, role_data, logging_groups]}
+      service_config_settings: {get_attr: [OpflexAgentBase, role_data, service_config_settings]}
+      puppet_config:
+        config_volume: opflex
+        puppet_tags: opflex_config
+        step_config:
+          get_attr: [OpflexAgentBase, role_data, step_config]
+        config_image: {get_param: DockerOpflexAgentImage}
+        # We need to mount /run for puppet_config step. This is because
+        # puppet-vswitch runs the commands "ovs-vsctl list open_vswitch ."
+        # when running vswitch::ovs::enable_hw_offload: true
+        # ovs-vsctl talks to the ovsdb-server (hosting conf.db)
+        # on the unix domain socket - /run/openvswitch/db.sock
+        volumes:
+          - /lib/modules:/lib/modules:ro
+          - /run/openvswitch:/run/openvswitch
+      kolla_config:
+        /var/lib/kolla/config_files/ciscoaci_opflex_agent.json:
+          command: /bin/supervisord -c /etc/opflex-agent-ovs/opflex_supervisord.conf
+          config_files:
+            - source: "/var/lib/kolla/config_files/src/*"
+              dest: "/"
+              merge: true
+              preserve_properties: true
+          permissions:
+            - path: /var/log/neutron
+              owner: neutron:neutron
+              recurse: true
+            - path: /var/lib/neutron
+              owner: neutron:neutron
+              recurse: true
+      docker_config_scripts: {get_attr: [ContainersCommon, docker_config_scripts]}
+      docker_config:
+        step_2:
+          create_opflex_config:
+            start_order: 1
+            detach: false
+            net: host
+            pid: host
+            user: root
+            command: # '/docker_puppet_apply.sh "STEP" "TAGS" "CONFIG" "DEBUG"'
+              list_concat:
+                -
+                  - '/docker_puppet_apply.sh'
+                  - '4'
+                  - 'file,opflex_config'
+                  - 'include ::tripleo::profile::base::ciscoaci_opflex'
+            image: {get_param: DockerOpflexAgentImage}
+            volumes:
+              list_concat:
+                - {get_attr: [ContainersCommon, docker_puppet_apply_volumes]}
+                -
+                  - /run/openvswitch:/run/openvswitch
+        step_4:
+          ciscoaci_opflex_agent:
+            start_order: 10
+            image: {get_param: DockerOpflexAgentImage}
+            net: host
+            pid: host
+            privileged: true
+            restart: always
+            healthcheck:
+              test: /etc/opflex-agent-ovs/opflex_healthcheck
+            volumes:
+              list_concat:
+                - {get_attr: [ContainersCommon, volumes]}
+                -
+                  - /var/lib/kolla/config_files/ciscoaci_opflex_agent.json:/var/lib/kolla/config_files/config.json:ro
+                  - /lib/modules:/lib/modules:ro
+                  - /run/openvswitch:/run/openvswitch
+                  - /var/lib/config-data/puppet-generated/opflex/:/var/lib/kolla/config_files/src:ro
+                  - /var/lib/config-data/puppet-generated/neutron/etc/neutron/neutron.conf:/etc/neutron/neutron.conf:ro
+                  - /var/lib/config-data/puppet-generated/neutron/etc/neutron/metadata_agent.ini:/etc/neutron/metadata_agent.ini:ro
+                  - /var/lib/neutron:/var/lib/neutron
+                  - /var/log/containers/opflex:/var/log/opflex
+                  - /var/log/containers/neutron:/var/log/neutron
+            environment:
+              - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
+      metadata_settings:
+        get_attr: [OpflexAgentBase, role_data, metadata_settings]
+      host_prep_tasks: 
+            - name: create persistent logs directory for cisco opflex agent
+              file:
+                path: /var/log/containers/opflex
+                state: directory
+
+            - name: get opflex interface type
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::opflex_interface_type
+              register: oit
+            - name: set opflex_interface_type fact
+              set_fact:
+                 opflex_interface_type: "{{ oit.stdout }}"
+       
+            - name: get opflex interface mtu
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::opflex_interface_mtu
+              register: oimtu
+            - name: set opflex_interface_mtu fact
+              set_fact:
+                 opflex_interface_mtu: "{{ oimtu.stdout }}"
+       
+            - name: get opflex target bridge to patch
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::opflex_target_bridge_to_patch
+              register: otbtp
+            - name: set opflex_target_bridge_to_patch fact
+              set_fact:
+                 opflex_target_bridge_to_patch: "{{ otbtp.stdout }}"
+       
+            - name: get neutron external bridge
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::neutron_external_bridge
+              register: neb
+            - name: set neutron_external_bridge fact
+              set_fact:
+                 neutron_external_bridge: "{{ neb.stdout }}"
+       
+            - name: get opflex encap mode
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_opflex_encap_mode
+              register: oemode
+            - name: set aci_opflex_encap_mode fact
+              set_fact:
+                 aci_opflex_encap_mode: "{{ oemode.stdout }}"
+       
+            - name: get apic infra vlan
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_apic_infravlan
+              register: aai
+            - name: set aci_apic_infravlan fact
+              set_fact:
+                 aci_apic_infravlan: "{{ aai.stdout }}"
+       
+            - name: get apic systemid
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_apic_systemid
+              register: asid
+            - name: set aci_apic_systemid fact
+              set_fact:
+                 aci_apic_systemid: "{{ asid.stdout }}"
+       
+            - name: get opflex uplink interface
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_opflex_uplink_interface
+              register: oui
+            - name: set aci_opflex_uplink_interface fact
+              set_fact:
+                 aci_opflex_uplink_interface: "{{ oui.stdout }}"
+       
+            - name: bring down opflex infra vlan interface
+              command: ifdown vlan"{{ aci_apic_infravlan }}"
+              ignore_errors: True
+            - name: delete interfaces file
+              file:
+                path: /etc/sysconfig/network-interfaces/vlan"{{ aci_apic_infravlan  }}"
+                state: absent
+              ignore_errors: True
+
+            - name: setup infra interface file ovs type
+              copy:
+                dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \n HOTPLUG=no"
+              when:
+                - opflex_interface_type == "ovs"
+          
+            - name: setup infra interface file linux type
+              copy:
+                dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes"
+              when:
+                - opflex_interface_type == "linux"
+          
+            - name: setup infra interface route file
+              copy:
+                dest: "/etc/sysconfig/network-scripts/route-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+                content: "224.0.0.0/4 via 0.0.0.0 dev {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+
+            - name: get mac address for uplink interface
+              command: "cat /sys/class/net/{{ aci_opflex_uplink_interface }}/address"
+              register: mac_addr
+ 
+            - name: setup infra interface dhcp file
+              copy:
+                dest: "/etc/dhcp/dhclient-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}.conf"
+                content: "send dhcp-client-identifier 01:{{ mac_addr.stdout }};"
+
+            - name: bring down infra interface
+              command: "/sbin/ifdown {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }} "
+
+            - name: bring up infra interface
+              command: "/sbin/ifup {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+
+            - name: setup br-fabric bridge
+              command: "/bin/ovs-vsctl -- --may-exist add-br br-fabric"
+
+            - name: set external id for br-fabric
+              command: "/bin/ovs-vsctl br-set-external-id br-fabric bridge-id br-fabric"
+
+            - name: set openflow version for br-fabric
+              command: "/bin/ovs-vsctl set bridge br-fabric protocols=[]"
+
+            - name: set br-fabric link up
+              command: "ip link set dev br-fabric up"
+
+            - name: set patch from br-fabric to "{{ neutron_external_bridge }}"
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric patch-fab-ex -- set Interface patch-fab-ex type=patch options:peer=patch-ex-fab"
+              when:
+                - aci_opflex_encap_mode == "vxlan"
+
+            - name: set patch from br-ex to br-fabric
+              command: "/bin/ovs-vsctl -- --may-exist add-port {{ neutron_external_bridge }}  patch-ex-fab -- set Interface patch-ex-fab type=patch options:peer=patch-fab-ex"
+              when:
+                - aci_opflex_encap_mode == "vxlan"
+
+            - name: remove any old br-int_vxlan0 port
+              command: "/bin/ovs-vsctl -- --if-exists del-port br-int br-int_vxlan0"
+              when: 
+                - aci_opflex_encap_mode == "vxlan"
+
+            - name: add br-fab_vxlan0 port
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric br-fab_vxlan0 -- set Interface br-fab_vxlan0 type=vxlan options:remote_ip=flow options:key=flow options:dst_port=8472"
+              when: 
+                - aci_opflex_encap_mode == "vxlan"
+
+            # patch port when encap is vlan
+            - set_fact:
+                ppname: "{{ opflex_target_bridge_to_patch[0:5] }}"
+
+            - name: set patch from br-fabric to {{ opflex_target_bridge_to_patch }}
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric br-fa_to_{{ ppname }} -- set Interface br-fa_to_{{ ppname }} type=patch options:peer={{ ppname }}_to_br-fa"
+              when:
+                - opflex_target_bridge_to_patch != ''
+                - aci_opflex_encap_mode == "vlan"
+
+            - name: set patch from {{ opflex_target_bridge_to_patch }} to br-fabric
+              command: "/bin/ovs-vsctl -- --may-exist add-port {{ opflex_target_bridge_to_patch }} {{ ppname }}_to_br-fa -- set Interface {{ ppname }}_to_br-fa type=patch options:peer=br-fa_to_{{ ppname }}"
+              when:
+                - opflex_target_bridge_to_patch != ""
+                - aci_opflex_encap_mode == "vlan"
+      upgrade_tasks:
+        list_concat:
+          - get_attr: [OpflexAgentBase, role_data, ovs_upgrade_tasks]
+          -
+            - name: Check if agent_ovs is deployed
+              command: systemctl is-enabled --quiet agent-ovs
+              tags: common
+              ignore_errors: True
+              register: agent_ovs_enabled
+            - name: "PreUpgrade step0,validation: Check service agent-ovs is running"
+              command: systemctl is-active --quiet agent-ovs
+              when:
+                - step|int == 0
+                - agent_ovs_enabled.rc == 0
+              tags: validation
+            - name: Stop and disable agent_ovs service
+              when:
+                - step|int == 2
+                - agent_ovs_enabled.rc == 0
+              service: name=agent-ovs state=stopped enabled=no
+
+            - name: Check if mcast_daemon is deployed
+              command: systemctl is-enabled --quiet mcast-daemon
+              tags: common
+              ignore_errors: True
+              register: mcast_daemon_enabled
+            - name: "PreUpgrade step0,validation: Check service mcast-daemon is running"
+              command: systemctl is-active --quiet mcast-daemon
+              when:
+                - step|int == 0
+                - mcast_daemon_enabled.rc == 0
+              tags: validation
+            - name: Stop and disable mcast_daemon service
+              when:
+                - step|int == 2
+                - mcast_daemon_enabled.rc == 0
+              service: name=mcast-daemon state=stopped enabled=no
+
+            - name: Set fact for removal of agent-ovs package
+              when: step|int == 2
+              set_fact:
+                remove_agent_ovs_package: {get_param: UpgradeRemoveUnusedPackages}
+            - name: Remove agent-ovs package if operator requests it
+              yum: name=agent-ovs state=removed
+              ignore_errors: True
+              when:
+                - step|int == 2
+                - remove_agent_ovs_package|bool
+
+            - name: Check if neutron_opflex_agent is deployed
+              command: systemctl is-enabled --quiet neutron-opflex-agent
+              tags: common
+              ignore_errors: True
+              register: neutron_opflex_agent_enabled
+            - name: "PreUpgrade step0,validation: Check service neutron-opflex-agent is running"
+              command: systemctl is-active --quiet neutron-opflex-agent
+              when:
+                - step|int == 0
+                - neutron_opflex_agent_enabled.rc == 0
+              tags: validation
+            - name: Stop and disable neutron_opflex_agent service
+              when:
+                - step|int == 2
+                - neutron_opflex_agent_enabled.rc == 0
+              service: name=neutron-opflex-agent state=stopped enabled=no
+
+            - name: Set fact for removal of neutron-opflex-agent package
+              when: step|int == 2
+              set_fact:
+                remove_neutron_opflex_package: {get_param: UpgradeRemoveUnusedPackages}
+            - name: Remove neutron-opflex-agent package if operator requests it
+              yum: name=neutron-opflex-agent state=removed
+              ignore_errors: True
+              when:
+                - step|int == 2
+                - remove_neutron_opflex_package|bool
+            - name: get infra vlan
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_apic_infravlan
+              register: vlanout
+            - name: set infra vlan fact
+              set_fact:
+                 aci_apic_infravlan: "{{ vlanout.stdout }}"
+            - name: bring down opflex infra vlan interface
+              command: ifdown vlan"{{ aci_apic_infravlan }}"
+              ignore_errors: True
+              when:
+                - step|int == 0
+            - name: delete interfaces file
+              file:
+                path: /etc/sysconfig/network-interfaces/vlan"{{ aci_apic_infravlan  }}"
+                state: absent
+              ignore_errors: True
+              when:
+                - step|int == 0
+
+            - name: get aci_opflex_interface
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_opflex_uplink_interface
+              register: acioui
+            - name: set aci_opflex_interface fact
+              set_fact:
+                 aci_opflex_uplink_interface: "{{ acioui.stdout }}"
+
+            - name: get opflex interface type
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::opflex_interface_type
+              register: oit
+            - name: set opflex interface type fact
+              set_fact:
+                 opflex_interface_type: "{{ oit.stdout }}"
+            - name: set opflex interface type to linux if nil
+              set_fact:
+                 opflex_interface_type: "linux"
+              when: opflex_interface_type == "nil"
+
+            - name: setup infra interface file ovs type
+              copy:
+                dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \n HOTPLUG=no"
+              when:
+                - opflex_interface_type == "ovs"
+          
+            - name: setup infra interface file linux type
+              copy:
+                dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes"
+              when:
+                - opflex_interface_type == "linux"
+          
+            - name: setup infra interface route file
+              copy:
+                dest: "/etc/sysconfig/network-scripts/route-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+                content: "224.0.0.0/4 via 0.0.0.0 dev {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+
+            - name: get mac address for uplink interface
+              command: "cat /sys/class/net/{{ aci_opflex_uplink_interface }}/address"
+              register: mac_addr
+ 
+            - name: setup infra interface dhcp file
+              copy:
+                dest: "/etc/dhcp/dhclient-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}.conf"
+                content: "send dhcp-client-identifier 01:{{ mac_addr.stdout }};"
+
+            - name: bring down infra interface
+              command: "/sbin/ifdown {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }} "
+              ignore_errors: True
+              when:
+                - step|int == 2
+
+            - name: bring up infra interface
+              command: "/sbin/ifup {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+              when:
+                - step|int == 2
+
+      update_tasks:
+        # puppetlabs-firewall manages security rules via Puppet but make the rules
+        # consistent by default. Since Neutron also creates some rules, we don't
+        # want them to be consistent so we have to ensure that they're not stored
+        # into sysconfig.
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1541528
+        - name: Remove IPv4 iptables rules created by Neutron that are persistent
+          lineinfile: dest=/etc/sysconfig/iptables
+                      regexp=".*neutron-"
+                      state=absent
+          when: step|int == 5
+        - name: Remove IPv6 iptables rules created by Neutron that are persistent
+          lineinfile: dest=/etc/sysconfig/ip6tables
+                      regexp=".*neutron-"
+                      state=absent
+          when: step|int == 5
+      fast_forward_upgrade_tasks:
+        - name: Remove neutron-ml2-driver-apic package
+          yum: name=neutron-ml2-driver-apic state=removed
+          ignore_errors: True
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Check if neutron_opflex_agent is deployed
+          command: systemctl is-enabled --quiet neutron-opflex-agent
+          ignore_errors: True
+          register: neutron_opflex_agent_enabled_result
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Set fact neutron_opflex_agent_enabled
+          set_fact:
+            neutron_opflex_agent_enabled: "{{ neutron_opflex_agent_enabled_result.rc == 0 }}"
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Stop neutron_opflex_agent
+          service: name=neutron-opflex-agent state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - neutron_opflex_agent_enabled|bool
+
+        - name: Check if agent_ovs is deployed
+          command: systemctl is-enabled --quiet agent-ovs
+          ignore_errors: True
+          register: agent_ovs_enabled_result
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Set fact agent_ovs_enabled
+          set_fact:
+            agent_ovs_enabled: "{{ agent_ovs_enabled_result.rc == 0 }}"
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Stop agent_ovs
+          service: name=agent-ovs state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - agent_ovs_enabled|bool
+
+        - name: Check if opflex_agent is deployed
+          command: systemctl is-enabled --quiet opflex-agent
+          ignore_errors: True
+          register: opflex_agent_enabled_result
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Set fact opflex_agent_enabled
+          set_fact:
+            opflex_agent_enabled: "{{ opflex_agent_enabled_result.rc == 0 }}"
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Stop opflex_agent
+          service: name=opflex-agent state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - opflex_agent_enabled|bool
+
+        - name: Check if mcast_daemon is deployed
+          command: systemctl is-enabled --quiet mcast-daemon
+          ignore_errors: True
+          register: mcast_daemon_enabled_result
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Set fact mcast_daemon_enabled
+          set_fact:
+            mcast_daemon_enabled: "{{ mcast_daemon_enabled_result.rc == 0 }}"
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Stop mcast_daemon
+          service: name=mcast-daemon state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - mcast_daemon_enabled|bool
+        - name: Check if neutron_opflex_agent is deployed
+          command: systemctl is-enabled --quiet neutron-opflex-agent
+          ignore_errors: True
+          register: neutron_opflex_agent_enabled_result
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Set fact neutron_opflex_agent_enabled
+          set_fact:
+            neutron_opflex_agent_enabled: "{{ neutron_opflex_agent_enabled_result.rc == 0 }}"
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Stop neutron_opflex_agent
+          service: name=neutron-opflex-agent state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - neutron_opflex_agent_enabled|bool
+        - name: stop metadata agent
+          command: supervisorctl -c /var/lib/neutron/opflex_agent/metadata.conf stop metadata-agent
+          ignore_errors: True
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - neutron_opflex_agent_enabled|bool
+        - name: stop opflex state watcher
+          command: supervisorctl -c /var/lib/neutron/opflex_agent/metadata.conf stop opflex-state-watcher
+          ignore_errors: True
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - neutron_opflex_agent_enabled|bool
+        - name: stop opflex ep watcher
+          command: supervisorctl -c /var/lib/neutron/opflex_agent/metadata.conf stop opflex-ep-watcher
+          ignore_errors: True
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - neutron_opflex_agent_enabled|bool
+        - name: agent ovs package update
+          shell: yum -y update agent-ovs
+          when:
+            - step|int == 6
+        - name: neutron opflex agent package update
+          shell: yum -y update neutron-opflex-agent
+          when:
+            - step|int == 6
