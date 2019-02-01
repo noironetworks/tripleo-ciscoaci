@@ -159,9 +159,9 @@
       ovsflows:
         cmd: ovs-ofctl -OOpenFlow13 dump-flows br-int 
         ofile: ovs/ovs-flows-br-int
-      ovsigmp:
-        cmd: ovs-appctl dpif/tnl/igmp-dump br-int 8472 
-        ofile: ovs/ovs-igmp
+      #ovsigmp:
+      #  cmd: ovs-appctl dpif/tnl/igmp-dump br-int 8472 
+      #  ofile: ovs/ovs-igmp
       ovsfabports:
         cmd: ovs-ofctl dump-ports-desc br-fabric 
         ofile: ovs/ovs-ports-fabric
