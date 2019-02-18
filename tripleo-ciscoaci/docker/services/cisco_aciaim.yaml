@@ -120,8 +120,6 @@ outputs:
             volumes:
               list_concat:
                 - {get_attr: [ContainersCommon, docker_puppet_apply_volumes]}
-                -
-                  - /run/openvswitch:/run/openvswitch
         step_3:
           aim_db_migrate:
             image: &ciscoaci_aim_image {get_param: DockerCiscoAciAimImage}

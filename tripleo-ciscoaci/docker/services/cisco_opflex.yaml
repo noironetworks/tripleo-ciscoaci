@@ -102,29 +102,9 @@ outputs:
               recurse: true
       docker_config_scripts: {get_attr: [ContainersCommon, docker_config_scripts]}
       docker_config:
-        step_2:
-          create_opflex_config:
-            start_order: 1
-            detach: false
-            net: host
-            pid: host
-            user: root
-            command: # '/docker_puppet_apply.sh "STEP" "TAGS" "CONFIG" "DEBUG"'
-              list_concat:
-                -
-                  - '/docker_puppet_apply.sh'
-                  - '4'
-                  - 'file,opflex_config'
-                  - 'include ::tripleo::profile::base::ciscoaci_opflex'
-            image: {get_param: DockerOpflexAgentImage}
-            volumes:
-              list_concat:
-                - {get_attr: [ContainersCommon, docker_puppet_apply_volumes]}
-                -
-                  - /run/openvswitch:/run/openvswitch
         step_4:
           ciscoaci_opflex_agent:
-            start_order: 10
+            start_order: 14
             image: {get_param: DockerOpflexAgentImage}
             net: host
             pid: host
@@ -145,6 +125,10 @@ outputs:
                   - /var/lib/neutron:/var/lib/neutron
                   - /var/log/containers/opflex:/var/log/opflex
                   - /var/log/containers/neutron:/var/log/neutron
+                  - /var/run/openvswitch/:/var/run/openvswitch/
+                  - /run/netns:/run/netns:shared
+                  - /run/openvswitch:/run/openvswitch
+                  - /lib/modules:/lib/modules:ro
             environment:
               - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
       metadata_settings:
@@ -301,6 +285,22 @@ outputs:
               when:
                 - opflex_target_bridge_to_patch != ""
                 - aci_opflex_encap_mode == "vlan"
+            - block:
+              - name: Copy in cleanup script
+                copy:
+                  content: {get_file: /usr/share/openstack-tripleo-heat-templates/docker/services/neutron/neutron-cleanup}
+                  dest: '/usr/libexec/neutron-cleanup'
+                  force: yes
+                  mode: '0755'
+              - name: Copy in cleanup service
+                copy:
+                  content: {get_file: /usr/share/openstack-tripleo-heat-templates/docker/services/neutron/neutron-cleanup.service}
+                  dest: '/usr/lib/systemd/system/neutron-cleanup.service'
+                  force: yes
+              - name: Enabling the cleanup service
+                service:
+                  name: neutron-cleanup
+                  enabled: yes
       upgrade_tasks:
         list_concat:
           - get_attr: [OpflexAgentBase, role_data, ovs_upgrade_tasks]
