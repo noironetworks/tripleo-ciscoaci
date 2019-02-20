@@ -241,7 +241,7 @@ outputs:
             ciscoaci::aim::enable_keystone_notification_purge: {get_param:  AciKeystoneNotificationPurge}
             ciscoaci::aim::tenant_network_types: {get_param: AciTenantNetworkType}
             ciscoaci::aim::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
-            ciscoaci::aim::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
+            ciscoaci::aim_config::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
       step_config: |
         include tripleo::profile::base::ciscoaci
