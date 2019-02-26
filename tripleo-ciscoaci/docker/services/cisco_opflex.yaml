@@ -207,14 +207,14 @@ outputs:
             - name: setup infra interface file ovs type
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \n HOTPLUG=no"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nHOTPLUG=no \nMTU={{ opflex_interface_mtu }}"
               when:
                 - opflex_interface_type == "ovs"
           
             - name: setup infra interface file linux type
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes \nMTU={{ opflex_interface_mtu }}"
               when:
                 - opflex_interface_type == "linux"
           
@@ -377,12 +377,21 @@ outputs:
               when:
                 - step|int == 2
                 - remove_neutron_opflex_package|bool
+
             - name: get infra vlan
               command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_apic_infravlan
               register: vlanout
             - name: set infra vlan fact
               set_fact:
                  aci_apic_infravlan: "{{ vlanout.stdout }}"
+
+            - name: get opflex interface mtu
+              command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::opflex_interface_mtu
+              register: oimtu
+            - name: set opflex_interface_mtu fact
+              set_fact:
+                 opflex_interface_mtu: "{{ oimtu.stdout }}"
+
             - name: bring down opflex infra vlan interface
               command: ifdown vlan"{{ aci_apic_infravlan }}"
               ignore_errors: True
@@ -417,14 +426,14 @@ outputs:
             - name: setup infra interface file ovs type
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \n HOTPLUG=no"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nHOTPLUG=no \nMTU={{ opflex_interface_mtu }}"
               when:
                 - opflex_interface_type == "ovs"
           
             - name: setup infra interface file linux type
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes"
+                content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes \n MTU={{ opflex_interface_mtu }}"
               when:
                 - opflex_interface_type == "linux"
           
