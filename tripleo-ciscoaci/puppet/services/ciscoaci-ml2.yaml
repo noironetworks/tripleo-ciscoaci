@@ -180,6 +180,9 @@ parameters:
        Opflex depends on knowing what the external bridge name is, which by default is br-ex
        If neutron configuration was changed to some other name, this variable needs to be set
        to the same value.
+  AciExternalRoutedDomain:
+    type: string
+    default: ""
 resources:
   NeutronMl2Base:
       type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-plugin-ml2.yaml
@@ -253,6 +256,7 @@ outputs:
             ciscoaci::ml2::enable_keystone_notification_purge: {get_param:  AciKeystoneNotificationPurge}
             ciscoaci::ml2::tenant_network_types: {get_param: AciTenantNetworkType}
             ciscoaci::ml2::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
+            ciscoaci::ml2::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
             neutron::policy::policy_path: "/etc/neutron/merged-policy.json"
       step_config: |
