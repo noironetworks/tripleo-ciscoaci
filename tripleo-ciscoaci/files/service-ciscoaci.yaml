@@ -154,6 +154,12 @@ parameters:
   AciExternalRoutedDomain:
     type: string
     default: ""
+  AciVmmMcastRanges:
+    type: string
+    default: "225.2.1.1:255.2.255.255"
+  AciVmmMuticastAddress:
+    type: string
+    default: "225.1.2.3"
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -220,5 +226,7 @@ outputs:
             ciscoaci::aim::tenant_network_types: {get_param: AciTenantNetworkType}
             ciscoaci::aim::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::aim_config::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
+            ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
+            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMuticastAddress}
       step_config: |
         include tripleo::profile::base::ciscoaci
