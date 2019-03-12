@@ -171,6 +171,13 @@ parameters:
        Opflex depends on knowing what the external bridge name is, which by default is br-ex
        If neutron configuration was changed to some other name, this variable needs to be set
        to the same value.
+    default: ""
+  AciVmmMcastRanges:
+    type: string
+    default: "225.2.1.1:255.2.255.255"
+  AciVmmMuticastAddress:
+    type: string
+    default: "225.1.2.3"
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-base.yaml
@@ -243,5 +250,7 @@ outputs:
             ciscoaci::aim::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::aim_config::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+            ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
+            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMuticastAddress}
       step_config: |
         include tripleo::profile::base::ciscoaci
