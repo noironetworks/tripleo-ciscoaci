@@ -171,7 +171,6 @@ parameters:
        Opflex depends on knowing what the external bridge name is, which by default is br-ex
        If neutron configuration was changed to some other name, this variable needs to be set
        to the same value.
-    default: ""
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:255.2.255.255"
