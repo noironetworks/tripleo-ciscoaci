@@ -186,7 +186,7 @@ parameters:
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:255.2.255.255"
-  AciVmmMuticastAddress:
+  AciVmmMulticastAddress:
     type: string
     default: "225.1.2.3"
 resources:
@@ -262,6 +262,6 @@ outputs:
             ciscoaci::aim_config::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
             ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
-            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMuticastAddress}
+            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMulticastAddress}
       step_config: |
         include tripleo::profile::base::ciscoaci
