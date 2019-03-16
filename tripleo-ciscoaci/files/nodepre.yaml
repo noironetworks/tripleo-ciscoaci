@@ -6,32 +6,39 @@ parameters:
     type: string
   ACIYumRepo:
     type: string
+  ACIYumRepoMetadataExpiry:
+    type: number
+    default: 60
+    description: metadata expiry time for aci repo in seconds
 
 resources:
   NodeConfig:
     type: OS::Heat::SoftwareConfig
     properties:
       group: script
-      inputs:
-      - name: yum_repo
-      config: |
-        #!/bin/sh
-        echo "[aci-repo]" > /etc/yum.repos.d/ciscoaci.repo
-        echo "name=Cisco ACI repository" >>/etc/yum.repos.d/ciscoaci.repo
-        echo "baseurl=$yum_repo" >>/etc/yum.repos.d/ciscoaci.repo
-        echo "enabled=1" >>/etc/yum.repos.d/ciscoaci.repo
-        echo "gpgcheck=0" >>/etc/yum.repos.d/ciscoaci.repo
-        echo "proxy=_none_" >>/etc/yum.repos.d/ciscoaci.repo
-        yum -y clean all
-        yum -y install ciscoaci-puppet
+      config: 
+        str_replace:
+           template: |
+             #!/bin/sh
+             echo "[aci-repo]" > /etc/yum.repos.d/ciscoaci.repo
+             echo "name=Cisco ACI repository" >>/etc/yum.repos.d/ciscoaci.repo
+             echo "baseurl=_yumrepo_" >>/etc/yum.repos.d/ciscoaci.repo
+             echo "enabled=1" >>/etc/yum.repos.d/ciscoaci.repo
+             echo "gpgcheck=0" >>/etc/yum.repos.d/ciscoaci.repo
+             echo "proxy=_none_" >>/etc/yum.repos.d/ciscoaci.repo
+             echo "metadata_expire=_expirytime_" >>/etc/yum.repos.d/ciscoaci.repo
+             yum -y clean all
+             yum -y install ciscoaci-puppet
+           params: 
+             _yumrepo_: {get_param: ACIYumRepo}
+             _expirytime_: {get_param: ACIYumRepoMetadataExpiry}
   NodeDeployment:
     type: OS::Heat::SoftwareDeployment
     properties:
        name: NodeDeployment
        config: {get_resource: NodeConfig}
        server: {get_param: server}
-       input_values:
-          yum_repo: {get_param: ACIYumRepo}
+       actions: ['CREATE','UPDATE']
 outputs:
   deploy_stdout:
     description: Deployment reference, used to trigger post-deploy on changes
