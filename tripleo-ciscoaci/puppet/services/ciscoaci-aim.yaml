@@ -198,7 +198,7 @@ parameters:
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:255.2.255.255"
-  AciVmmMuticastAddress:
+  AciVmmMulticastAddress:
     type: string
     default: "225.1.2.3"
 resources:
@@ -266,7 +266,7 @@ outputs:
             ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
             ciscoaci::opflex::use_lldp_discovery: {get_param: ACIUseLldp}
             ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
-            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMuticastAddress}
+            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMulticastAddress}
       step_config: |
         include tripleo::profile::base::ciscoaci_aim
       metadata_settings:
