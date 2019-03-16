@@ -103,6 +103,12 @@ parameters:
   ACIHostLinks:
     type: json
     default: {}
+    description: >
+       Describes the host connections to switches in json format. Example
+       '{"101":{"ha.dom":"1/1", "hb.dom":"1/2"}, "102":{"hc.dom":"1/1"} }'
+       ha.dom host is connected to port 1/1 of switch id 101
+       hb.dom host is connected to port 1/2 of switch id 101
+       hc.dom is connected to port 1/1 of switch id 102
   ACIVpcPairs:
     type: string
     default: ''
