@@ -185,7 +185,7 @@ parameters:
        to the same value.
   AciVmmMcastRanges:
     type: string
-    default: "225.2.1.1:255.2.255.255"
+    default: "225.2.1.1:225.2.255.255"
   AciVmmMulticastAddress:
     type: string
     default: "225.1.2.3"
