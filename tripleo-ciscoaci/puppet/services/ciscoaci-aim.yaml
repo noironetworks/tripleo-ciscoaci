@@ -94,12 +94,6 @@ parameters:
       The vlan ranges to use when encap mode is vlan. If ACIOpflexEncapMode is vxlan, this option is
       ignored
     type: comma_delimited_list
-  ACIUseLldp:
-    type: boolean
-    default: true
-    description: >
-      When true, use lldp to discover host links that are connected to aci fabric.
-      if set to false, ACIHostLinks needs to be set to describe the host connectivity to fabric
   ACIHostLinks:
     type: json
     default: {}
@@ -237,7 +231,6 @@ outputs:
             ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
             ciscoaci::aim_config::aci_apic_aep: {get_param: ACIApicEntityProfile}
             ciscoaci::aim_config::aci_vpc_pairs: {get_param: ACIVpcPairs}
-            ciscoaci::aim_config::use_lldp_discovery: {get_param: ACIUseLldp}
             ciscoaci::aim_config::aci_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::aim_config::aci_opflex_vlan_range: {get_param: ACIOpflexVlanRange}
             ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
@@ -264,7 +257,6 @@ outputs:
             ciscoaci::aim_config::aci_external_routed_domain_name: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
             ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
-            ciscoaci::opflex::use_lldp_discovery: {get_param: ACIUseLldp}
             ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
             ciscoaci::aim_config::multicast_address: {get_param: AciVmmMulticastAddress}
       step_config: |

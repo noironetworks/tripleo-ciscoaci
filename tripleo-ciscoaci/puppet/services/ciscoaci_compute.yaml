@@ -68,12 +68,6 @@ parameters:
     default: 'vxlan'  
     constraints:
       - allowed_values: ['vlan', 'vxlan']
-  ACIUseLldp:
-    type: boolean
-    default: true
-    description: >
-      When true, use lldp to discover host links that are connected to aci fabric.
-      if set to false, ACIHostLinks needs to be set to describe the host connectivity to fabric
   AciOpenvswitch:
     type: boolean
     default: false
@@ -155,10 +149,8 @@ outputs:
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
             ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
             ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
-            ciscoaci::compute::use_lldp_discovery: {get_param: ACIUseLldp}
             ciscoaci::compute::use_openvswitch: {get_param: AciOpenvswitch}
             ciscoaci::compute::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
-            ciscoaci::opflex::use_lldp_discovery: {get_param: ACIUseLldp}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute
