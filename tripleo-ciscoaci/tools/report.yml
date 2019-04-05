@@ -175,5 +175,6 @@
       when: arch_status.rc == 0
       delegate_to: localhost
       become: true
+      ignore_errors: true
 
     - debug: msg="The archive file is at {{ hostvars['localhost']['dest_file'] }}"
