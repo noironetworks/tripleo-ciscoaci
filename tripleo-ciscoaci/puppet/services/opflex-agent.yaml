@@ -99,6 +99,8 @@ outputs:
               '297 opflex vxlan networks':
                 proto: 'udp'
                 dport: 8472
+              '298 opflex igmp accept':
+                proto: 'igmp'
       step_config: |
         include ::tripleo::profile::base::ciscoaci_opflex
       upgrade_tasks:
