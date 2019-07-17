@@ -68,6 +68,10 @@ parameters:
     default: 'vxlan'  
     constraints:
       - allowed_values: ['vlan', 'vxlan']
+  ACIEnableBondWatchService:
+    type: boolean
+    default: false
+    description: Enable and start apic-bond-watch service
   AciOpenvswitch:
     type: boolean
     default: false
@@ -146,6 +150,7 @@ outputs:
             ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}    
             ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
             ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
             ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
