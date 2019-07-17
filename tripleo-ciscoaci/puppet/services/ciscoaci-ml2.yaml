@@ -177,6 +177,10 @@ parameters:
   AciExternalRoutedDomain:
     type: string
     default: ""
+  ACIEnableBondWatchService:
+    type: boolean
+    default: false
+    description: Enable and start apic-bond-watch service
 resources:
   NeutronMl2Base:
       type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-plugin-ml2.yaml
@@ -250,6 +254,7 @@ outputs:
             ciscoaci::ml2::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::ml2::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+            ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
             neutron::policy::policy_path: "/etc/neutron/merged-policy.json"
       step_config: |
         include tripleo::profile::base::ciscoaci_ml2
