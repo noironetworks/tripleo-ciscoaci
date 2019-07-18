@@ -55,6 +55,10 @@ parameters:
   AciOpenvswitch:
     type: boolean
     default: false
+  ACIEnableBondWatchService:
+    type: boolean
+    default: false
+    description: Enable and start apic-bond-watch service
   IntelCnaNicDisableLLDP:
     type: boolean
     default: true
@@ -81,6 +85,7 @@ outputs:
             ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
+            ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
             ciscoaci::compute::use_lldp_discovery: {get_param: ACIUseLldp}
             ciscoaci::compute::use_openvswitch: {get_param: AciOpenvswitch}
             ciscoaci::compute::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
