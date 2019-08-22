@@ -40,7 +40,13 @@ parameters:
     default: admin
   ACIApicPassword:
     type: string
-    default: 'password'
+    default: ''
+  ACIApicCertName:
+    type: string
+    default: ''
+  ACIApicPrivateKey:
+    type: string
+    default: ''
   ACIApicSystemId:
     type: string
     default: 'aci_openstack'
@@ -228,6 +234,8 @@ outputs:
             ciscoaci::aim_config::aci_apic_hosts: {get_param: ACIApicHosts}
             ciscoaci::aim_config::aci_apic_username: {get_param: ACIApicUsername}
             ciscoaci::aim_config::aci_apic_password: {get_param: ACIApicPassword}
+            ciscoaci::aim_config::aci_apic_certname: {get_param: ACIApicCertName}
+            ciscoaci::aim_config::aci_apic_privatekey: {get_param: ACIApicPrivateKey}
             ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
             ciscoaci::aim_config::aci_apic_aep: {get_param: ACIApicEntityProfile}
             ciscoaci::aim_config::aci_vpc_pairs: {get_param: ACIVpcPairs}
