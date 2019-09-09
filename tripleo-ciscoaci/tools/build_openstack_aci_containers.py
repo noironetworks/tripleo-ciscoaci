@@ -106,7 +106,7 @@ def main():
     parser.add_option("-d", "--destregistry",
                       help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp13",
                       dest='destination_registry')
-    parser.add_option("-t", "--tag", help="tag for images",
+    parser.add_option("-t", "--tag", help="tag for images, defaults to 'latest'",
                       default="latest", dest='tag')
     (options, args) = parser.parse_args()
 
