@@ -48,7 +48,7 @@ def build_containers(upstream_registry, pushurl, pushtag, container_name, arr):
 
     build_dir = tempfile.mkdtemp()
     def_user = subprocess.check_output(
-        ['docker', 'run', '--name', container_name, '-it', rhel_container, 'whoami'])
+        ['docker', 'run', '--name', container_name, rhel_container, 'whoami'])
 
     subprocess.check_call(["docker", "rm", container_name])
 
