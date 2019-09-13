@@ -134,7 +134,6 @@ outputs:
                   - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
                   - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
                   - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
-                  - /var/lib/config-data/neutron/usr/share/neutron:/usr/share/neutron:ro
             command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci', 
                       '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', 'upgrade', 'head', '&&',
                       '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&', 
