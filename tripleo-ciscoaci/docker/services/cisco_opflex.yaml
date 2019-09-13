@@ -134,6 +134,15 @@ outputs:
       metadata_settings:
         get_attr: [OpflexAgentBase, role_data, metadata_settings]
       host_prep_tasks: 
+            - name: create /run/netns with temp namespace
+              command: ip netns add ns_temp
+              register: ipnetns_add_result
+              ignore_errors: True
+            - name: remove temp namespace
+              command: ip netns delete ns_temp
+              ignore_errors: True
+              when: ipnetns_add_result.rc == 0
+
             - name: create persistent logs directory for cisco opflex agent
               file:
                 path: /var/log/containers/opflex
