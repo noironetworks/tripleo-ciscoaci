@@ -183,7 +183,7 @@ def main():
                          "apicapi-*.rpm", 'libuv-*.rpm', 'libopflex-*.rpm', "libmodelgbp-*.rpm",
                          "neutron-opflex-agent-*.rpm",
                          "noiro-openvswitch-lib-*.rpm", "noiro-openvswitch-otherlib-*",
-                         "openstack-neutron-gbp-*.rpm", "opflex-agent-lib-*.rpm", "opflex-agent-1*.rpm",
+                         "openstack-neutron-gbp-*.rpm", "opflex-agent-lib-*.rpm", "opflex-agent-2*.rpm",
                          "opflex-agent-renderer-openvswitch-*.rpm", "python2-networking-sfc-*.rpm",
                          "python2-tabulate-*.rpm", "python-gbpclient-*.rpm",
                          "python-websocket-client-0.34.*.rpm", "ciscoaci-puppet*.rpm", "ethtool*.rpm", "lldpd*.rpm"],
