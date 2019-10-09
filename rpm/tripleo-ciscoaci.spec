@@ -24,11 +24,6 @@ cp -r * $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates
 chmod a+x $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates/*
 
 %post
-rm -rf /var/www/html/acirepo
-mkdir -p /var/www/html/acirepo
-cp /opt/ciscoaci-tripleo-heat-templates/rpms/* /var/www/html/acirepo
-createrepo /var/www/html/acirepo
-
 if [ "$1" = "1" ]; then
 
    echo ""
@@ -63,20 +58,7 @@ elif [ "$1" = "2" ]; then
         cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.safe
       fi
    fi
-   #/bin/rm -f /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.safe
-   #/bin/rm -f /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.safe
 fi
-
-#mkdir -p /opt/ciscoaci-tripleo-heat-templates/tools
-#mkdir -p /opt/ciscoaci-tripleo-heat-templates/docker/services
-#mkdir -p /opt/ciscoaci-tripleo-heat-templates/puppet/services
-#
-#cp /opt/tripleo-ciscoaci/files/build_openstack_aci_containers.py /opt/ciscoaci/bin/build_openstack_aci_containers.py
-#cp /opt/tripleo-ciscoaci/files/ciscoaci_aim.sh /opt/tripleo-ciscoaci/bin/ciscoaci_aim.sh
-#cp /opt/tripleo-ciscoaci/files/service-ciscoaci.yaml /opt/tripleo-ciscoaci/ciscoaci.yaml
-#cp /opt/tripleo-ciscoaci/files/service-ciscoaci-compute.yaml /opt/tripleo-ciscoaci/ciscoaci_compute.yaml
-#cp /opt/tripleo-ciscoaci/files/nodepre.yaml /opt/tripleo-ciscoaci/nodepre.yaml
-#cp /opt/tripleo-ciscoaci/files/example_ciscoaci.yaml /opt/tripleo-ciscoaci/example_ciscoaci.yaml
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -86,6 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/ciscoaci-tripleo-heat-templates/*
 
 %postun
+/bin/rm -rf /var/www/html/acirepo
 if [ "$1" = "0" ]; then
    #uninstall scenario
    
@@ -107,3 +90,9 @@ elif [ "$1" = "1" ]; then
    /bin/rm -f /usr/share/openstack-tripleo-heat-templates/roles_data.yaml.safe
    /bin/rm -f /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.j2.yaml.safe
 fi
+
+%posttrans
+rm -rf /var/www/html/acirepo
+mkdir -p /var/www/html/acirepo
+cp /opt/ciscoaci-tripleo-heat-templates/rpms/* /var/www/html/acirepo
+createrepo /var/www/html/acirepo
