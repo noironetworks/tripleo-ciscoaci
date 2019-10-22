@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import ConfigParser
+import datetime
 import glob
 import optparse
 import os
@@ -93,6 +94,7 @@ USER root
 def main():
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
+    timestamp = datetime.datetime.now().strftime('%s')
 
     parser.add_option("-o", "--output_file",
                       help="Environment file to create, default is /home/stack/templates/ciscoaci_containers.yaml",
@@ -107,7 +109,7 @@ def main():
                       help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp13",
                       dest='destination_registry')
     parser.add_option("-t", "--tag", help="tag for images, defaults to 'latest'",
-                      default="latest", dest='tag')
+                      default=timestamp, dest='tag')
     (options, args) = parser.parse_args()
 
     if not options.destination_registry:
