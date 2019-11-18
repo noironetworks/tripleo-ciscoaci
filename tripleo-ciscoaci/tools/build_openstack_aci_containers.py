@@ -181,7 +181,7 @@ def main():
         'opflex-agent': {
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-opflex",
-            "packages": ['python-meld3-*', 'supervisor-*', 'python-click-*', 'libicu-*',
+            "packages": ['python-meld3-*', 'supervisor-*', 'python-click-*', 
                          "apicapi-*.rpm", 'libuv-*.rpm', 'libopflex-*.rpm', "libmodelgbp-*.rpm",
                          "neutron-opflex-agent-*.rpm",
                          "noiro-openvswitch-lib-*.rpm", "noiro-openvswitch-otherlib-*",
