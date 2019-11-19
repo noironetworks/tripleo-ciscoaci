@@ -31,12 +31,12 @@ def determine_ucloud_ip():
         return uip
 
 
-def build_containers(upstream_registry, pushurl, pushtag, container_name, arr):
+def build_containers(upstream_registry, regseparator, pushurl, pushtag, container_name, arr):
     print "Building ACI %s container" % container_name
 
     aci_pkgs = arr['packages']
     docker_run_cmds = arr['run_cmds']
-    rhel_container = "%s/%s:latest" % (upstream_registry,
+    rhel_container = "%s%s%s:latest" % (upstream_registry, regseparator
                                        arr['rhel_container'])
     if "aci_container" in arr.keys():
         aci_container = arr['aci_container']
@@ -108,6 +108,10 @@ def main():
     parser.add_option("-d", "--destregistry",
                       help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp13",
                       dest='destination_registry')
+    parser.add_option("-r", "--regseparator",
+                      help="Upstream registry separator for images, eg. '/' for normal upstream registrys (default). Will be added between upstream registry name and container name. Use '_' for satellite based registries.",
+                      default="/",
+                      dest='regseparator')
     parser.add_option("-t", "--tag", help="tag for images, defaults to 'latest'",
                       default=timestamp, dest='tag')
     (options, args) = parser.parse_args()
@@ -206,7 +210,7 @@ def main():
                 print("Unknown container name %s, skipping" % co)
 
     for container in containers_list:
-        build_containers(options.upstream_registry, pushurl,
+        build_containers(options.upstream_registry, options.regseparator, pushurl,
                          options.tag, container, container_array[container])
 
     config_blob = "parameter_defaults:\n"
