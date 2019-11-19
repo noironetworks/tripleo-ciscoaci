@@ -36,7 +36,7 @@ def build_containers(upstream_registry, regseparator, pushurl, pushtag, containe
 
     aci_pkgs = arr['packages']
     docker_run_cmds = arr['run_cmds']
-    rhel_container = "%s%s%s:latest" % (upstream_registry, regseparator
+    rhel_container = "%s%s%s:latest" % (upstream_registry, regseparator,
                                        arr['rhel_container'])
     if "aci_container" in arr.keys():
         aci_container = arr['aci_container']
