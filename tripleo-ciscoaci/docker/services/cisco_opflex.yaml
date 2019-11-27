@@ -260,12 +260,12 @@ outputs:
               command: "ip link set dev br-fabric up"
 
             - name: set patch from br-fabric to "{{ neutron_external_bridge }}"
-              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric patch-fab-ex -- set Interface patch-fab-ex type=patch options:peer=patch-ex-fab"
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric patch-fabric-ex -- set Interface patch-fabric-ex type=patch options:peer=patch-ex-fabric"
               when:
                 - aci_opflex_encap_mode == "vxlan"
 
             - name: set patch from br-ex to br-fabric
-              command: "/bin/ovs-vsctl -- --may-exist add-port {{ neutron_external_bridge }}  patch-ex-fab -- set Interface patch-ex-fab type=patch options:peer=patch-fab-ex"
+              command: "/bin/ovs-vsctl -- --may-exist add-port {{ neutron_external_bridge }}  patch-ex-fabric -- set Interface patch-ex-fabric type=patch options:peer=patch-fabric-ex"
               when:
                 - aci_opflex_encap_mode == "vxlan"
 
