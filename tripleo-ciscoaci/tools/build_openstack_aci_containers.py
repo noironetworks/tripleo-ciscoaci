@@ -66,7 +66,7 @@ USER root
        """ % (rhel_container, aci_container)
     for pkg in aci_pkgs:
         blob = blob + "Copy %s /tmp/ \n" % pkg
-    blob = blob + "RUN cd /tmp && rpm -Uvh *.rpm \n"
+    #blob = blob + "RUN cd /tmp && rpm -Uvh *.rpm \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
     if user == '':
@@ -130,7 +130,8 @@ def main():
             "rhel_container": "openstack-horizon",
             "packages": ["openstack-dashboard-gbp-*.rpm", "python-django-horizon-gbp-*.rpm",
                          "python-gbpclient-*.rpm"],
-            "run_cmds": ["mkdir -p /usr/lib/heat",
+            "run_cmds": ["cd /tmp && rpm -Uvh *.rpm",
+                         "mkdir -p /usr/lib/heat",
                          "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python2.7/site-packages/openstack_dashboard/local/enabled"],
             "osd_param_name": ["DockerHorizonImage"],
 
@@ -138,7 +139,8 @@ def main():
         'heat': {
             "rhel_container": "openstack-heat-engine",
             "packages": ["openstack-heat-gbp-*.rpm", "python-gbpclient-*.rpm"],
-            "run_cmds": ["mkdir -p /usr/lib/heat",
+            "run_cmds": ["cd /tmp && rpm -Uvh *.rpm",
+                         "mkdir -p /usr/lib/heat",
                          "cp -r /usr/lib/python2.7/site-packages/gbpautomation /usr/lib/heat"],
             "osd_param_name": ["DockerHeatEngineImage"],
         },
@@ -153,7 +155,7 @@ def main():
                          "python-websocket-client-0.34.*.rpm", 
 			 "ciscoaci-puppet*.rpm", "aci-integration-module*.rpm", 
 			 "acitoolkit*.rpm", "python-semantic_version*.rpm"],
-            "run_cmds": [],
+            "run_cmds": ["cd /tmp && rpm -Uvh *.rpm"],
             "osd_param_name": ["DockerNeutronApiImage", "DockerNeutronConfigImage"],
         },
         'ciscoaci-lldp': {
@@ -165,7 +167,7 @@ def main():
                          "aci-integration-module*.rpm", "acitoolkit*.rpm",
                          "ethtool*.rpm", "lldpd*.rpm",
                          "python-semantic_version*.rpm", "neutron-opflex-agent-*.rpm"],
-            "run_cmds": [],
+            "run_cmds": ["cd /tmp && rpm -Uvh *.rpm"],
             "osd_param_name": ["DockerCiscoLldpImage"],
             "user": 'root',
         },
@@ -178,7 +180,7 @@ def main():
                          "aci-integration-module*.rpm", "acitoolkit*.rpm",
                          "python-semantic_version*.rpm", "neutron-opflex-agent-*.rpm",
                          "openstack-neutron-gbp-*.rpm", "python-gbpclient-*.rpm"],
-            "run_cmds": [],
+            "run_cmds": ["cd /tmp && rpm -Uvh *.rpm"],
             "osd_param_name": ["DockerCiscoAciAimImage"],
             "user": 'root',
         },
@@ -193,7 +195,25 @@ def main():
                          "opflex-agent-renderer-openvswitch-*.rpm", "python2-networking-sfc-*.rpm",
                          "python2-tabulate-*.rpm", "python-gbpclient-*.rpm",
                          "python-websocket-client-0.34.*.rpm", "ciscoaci-puppet*.rpm", "ethtool*.rpm", "lldpd*.rpm"],
-            "run_cmds": [],
+            "run_cmds": ["cd /tmp && yum localinstall -y libuv-*.rpm",
+                         "cd /tmp && yum localinstall -y python2-tabulate-*.rpm",
+                         "cd /tmp && yum localinstall -y python-websocket-client-0.34.*.rpm",
+                         "cd /tmp && yum localinstall -y python-click-*",
+                         "cd /tmp && yum localinstall -y python-meld3-*",
+                         "cd /tmp && yum localinstall -y apicapi-*.rpm",
+                         "cd /tmp && yum localinstall -y supervisor-*",
+                         "cd /tmp && yum localinstall -y libopflex-*.rpm",
+                         "cd /tmp && yum localinstall -y libmodelgbp-*.rpm",
+                         "cd /tmp && yum localinstall -y noiro-openvswitch-*.rpm",
+                         "cd /tmp && yum localinstall -y opflex-*.rpm",
+                         "cd /tmp && yum localinstall -y openstack-neutron-gbp-*.rpm",
+                         "cd /tmp && yum localinstall -y neutron-opflex-agent-*.rpm",
+                         "cd /tmp && yum localinstall -y python-gbpclient-*.rpm",
+                         "cd /tmp && yum localinstall -y ethtool*.rpm",
+                         "cd /tmp && yum localinstall -y lldp*.rpm",
+                         "cd /tmp && yum localinstall -y ciscoaci-puppet*.rpm",
+                         "cd /tmp && yum localinstall -y python2-networking-sfc-*.rpm"
+                          ],
             "osd_param_name": ["DockerOpflexAgentImage"],
             "user": 'root',
         },
