@@ -181,6 +181,9 @@ parameters:
     type: boolean
     default: false
     description: Enable and start apic-bond-watch service
+  EnableInternalTLS:
+    type: boolean
+    default: false
 resources:
   NeutronMl2Base:
       type: /usr/share/openstack-tripleo-heat-templates/puppet/services/neutron-plugin-ml2.yaml
@@ -192,6 +195,17 @@ resources:
         RoleName: {get_param: RoleName}
         RoleParameters: {get_param: RoleParameters}
 
+  TLSProxyBase:
+    type: OS::TripleO::Services::TLSProxyBase
+    properties:
+      ServiceData: {get_param: ServiceData}
+      ServiceNetMap: {get_param: ServiceNetMap}
+      DefaultPasswords: {get_param: DefaultPasswords}
+      EndpointMap: {get_param: EndpointMap}
+      RoleName: {get_param: RoleName}
+      RoleParameters: {get_param: RoleParameters}
+      EnableInternalTLS: {get_param: EnableInternalTLS}
+
 outputs:
   role_data:
     description: Role data for the Neutron Cisco ACI plugin
@@ -200,17 +214,17 @@ outputs:
       config_settings:
         map_merge:
           - get_attr: [NeutronMl2Base, role_data, config_settings]
+          - get_attr: [TLSProxyBase, role_data, config_settings]
           - ciscoaci::aim_config::neutron_sql_connection:
-              list_join:
-                - ''
-                - - {get_param: [EndpointMap, MysqlInternal, protocol]}
-                  - '://neutron:'
-                  - {get_param: NeutronPassword}
-                  - '@'
-                  - {get_param: [EndpointMap, MysqlInternal, host]}
-                  - '/ovs_neutron'
-                  - '?bind_address='
-                  - "%{hiera('tripleo::profile::base::database::mysql::client_bind_address')}"
+              make_url:
+                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
+                username: neutron
+                password: {get_param: NeutronPassword}
+                host: {get_param: [EndpointMap, MysqlInternal, host]}
+                path: /ovs_neutron
+                query:
+                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+                  read_default_group: tripleo
             ciscoaci::aim_config::aci_apic_hosts: {get_param: ACIApicHosts}
             ciscoaci::aim_config::aci_apic_username: {get_param: ACIApicUsername}
             ciscoaci::aim_config::aci_apic_password: {get_param: ACIApicPassword}
