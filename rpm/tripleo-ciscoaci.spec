@@ -20,13 +20,10 @@ This package contains files that are required for patch tripleO to support ACI
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates
-mkdir -p $RPM_BUILD_ROOT/var/www/html
 cp -r docker $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates
 cp -r puppet $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates
 cp -r tools $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates
 cp nodepre.yaml $RPM_BUILD_ROOT/opt/ciscoaci-tripleo-heat-templates
-cp -r  rpms $RPM_BUILD_ROOT/var/www/html/acirepo
-createrepo $RPM_BUILD_ROOT/var/www/html/acirepo
 
 %post
 
@@ -36,5 +33,3 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 /opt/ciscoaci-tripleo-heat-templates
-/var/www/html/acirepo
-
