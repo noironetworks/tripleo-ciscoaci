@@ -156,7 +156,7 @@ def main():
 	with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
 	    expected_md5sum = fh.read()
 
-	if not (md5sum == expected_md5sum):
+	if not (md5sum == expected_md5sum.strip()):
 	    if not options.force:
 		print("md5sum of provided tar file does not match with expected. Use --force to disable this check'")
 		sys.exit(1)
