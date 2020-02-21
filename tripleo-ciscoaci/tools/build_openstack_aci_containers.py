@@ -7,12 +7,14 @@ import glob
 import grp
 import argparse
 import os
+import pwd
 import shutil
 import sys
 import subprocess
 import tarfile
 import tempfile
 import pdb
+from hashlib import md5
 
 CISCOACI_RPMDIR = "/var/www/html/acirepo"
 
@@ -67,8 +69,8 @@ MAINTAINER Cisco Systems
 LABEL name="rhosp13/%s" vendor="Cisco Systems" version="13.0" release="1"
 USER root
        """ % (rhel_container, aci_container)
-    #blob = blob + "RUN yum repolist --disablerepo=* && yum-config-manager --disable \* > /dev/null && yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-13-rpms rhel-7-server-rhceph-3-tools-rpms >/dev/null \n"
-    blob = blob + "RUN yum repolist \n"
+    blob = blob + "RUN yum repolist --disablerepo=* && yum-config-manager --disable \* > /dev/null && yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-13-rpms rhel-7-server-rhceph-3-tools-rpms >/dev/null \n"
+    #blob = blob + "RUN yum repolist \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
@@ -151,7 +153,7 @@ def main():
 	m.update(data)
 	md5sum = m.hexdigest()
 
-	with open('/opt/ciscoaci-tripleo-heat-templates/tool/dist_md5sum') as fh:
+	with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
 	    expected_md5sum = fh.read()
 
 	if not (md5sum == expected_md5sum):
@@ -214,14 +216,14 @@ gpgcheck=0
         'neutron-server': {
             "rhel_container": "openstack-neutron-server",
             "packages": [],
-            "run_cmds": ["yum -y install apicapi neutron-opflex-agent libmodelgbp openstack-neutron-gbp python2-networking-sfc ciscoaci-puppet python-gbpclient aci-integration-module python-semantic_version"],
+            "run_cmds": ["yum -y install apicapi neutron-opflex-agent libmodelgbp openstack-neutron-gbp python2-networking-sfc ciscoaci-puppet python-gbpclient aci-integration-module "],
             "osd_param_name": ["DockerNeutronApiImage", "DockerNeutronConfigImage"],
         },
         'ciscoaci-lldp': {
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-lldp",
             "packages": [],
-            "run_cmds": ["yum -y install aci-integration-module neutron-opflex-agent ciscoaci-puppet ethtool apicapi lldpd python-semantic_version"],
+            "run_cmds": ["yum -y install aci-integration-module neutron-opflex-agent ciscoaci-puppet ethtool apicapi lldpd "],
             "osd_param_name": ["DockerCiscoLldpImage"],
             "user": 'root',
         },
@@ -229,7 +231,7 @@ gpgcheck=0
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-aim",
             "packages": [],
-            "run_cmds": ["yum -y install apicapi ciscoaci-puppet aci-integration-module neutron-opflex-agent openstack-neutron-gbp python-gbpclient python-semantic_version"],
+            "run_cmds": ["yum -y install apicapi ciscoaci-puppet aci-integration-module neutron-opflex-agent openstack-neutron-gbp python-gbpclient "],
             "osd_param_name": ["DockerCiscoAciAimImage"],
             "user": 'root',
         },
