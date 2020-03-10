@@ -69,8 +69,8 @@ MAINTAINER Cisco Systems
 LABEL name="rhosp13/%s" vendor="Cisco Systems" version="13.0" release="1"
 USER root
        """ % (rhel_container, aci_container)
-    blob = blob + "RUN yum repolist --disablerepo=* && yum-config-manager --disable \* > /dev/null && yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-13-rpms rhel-7-server-rhceph-3-tools-rpms >/dev/null \n"
-    #blob = blob + "RUN yum repolist \n"
+    blob = blob + "RUN yum repolist --disablerepo=* && yum-config-manager --disable \* > /dev/null \n"
+    blob = blob + "RUN yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-13-rpms rhel-7-server-rhceph-3-tools-rpms \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
