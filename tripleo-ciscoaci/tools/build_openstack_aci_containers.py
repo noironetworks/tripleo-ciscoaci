@@ -9,6 +9,7 @@ import argparse
 import os
 import pwd
 import shutil
+import shlex
 import sys
 import subprocess
 import tarfile
@@ -146,6 +147,7 @@ def main():
 
     current_user = getpass.getuser()
     current_grp = grp.getgrgid(pwd.getpwnam('stack').pw_gid).gr_name
+
     if options.repo_tar_file:
 	m=md5()
 	with open(options.repo_tar_file, 'r') as fh:
@@ -255,23 +257,39 @@ gpgcheck=0
             else:
                 print("Unknown container name %s, skipping" % co)
 
-    for container in containers_list:
-        build_containers(options.upstream_registry, options.regseparator, pushurl,
-                         options.tag, container, container_array[container], repotext)
+    port80opened = False
+    if options.repo_tar_file:
+       cmd = 'sudo iptables -I INPUT 23 -p tcp -m multiport --dports 80 -m state --state NEW -m comment --comment "ciscoaci open port 80" -j ACCEPT'
+       subprocess.check_call(shlex.split(cmd))
+       port80opened = True
 
-    config_blob = "parameter_defaults:\n"
-    for container in containers_list:
-        param_names = container_array[container]['osd_param_name']
-        if "aci_container" in container_array[container].keys():
-            container_name = container_array[container]['aci_container']
-        else:
-            container_name = "%s-ciscoaci" % container_array[container]['rhel_container']
-        for pn in param_names:
-            config_blob = config_blob + \
-                "   %s: %s/%s:%s \n" % (
-                    pn, pushurl, container_name, options.tag)
-    with open(options.output_file, "w") as fh:
-        fh.write(config_blob)
+    try:
+	for container in containers_list:
+	    build_containers(options.upstream_registry, options.regseparator, pushurl,
+		    options.tag, container, container_array[container], repotext)
+
+        config_blob = "parameter_defaults:\n"
+        for container in containers_list:
+            param_names = container_array[container]['osd_param_name']
+            if "aci_container" in container_array[container].keys():
+                container_name = container_array[container]['aci_container']
+            else:
+                container_name = "%s-ciscoaci" % container_array[container]['rhel_container']
+            for pn in param_names:
+                config_blob = config_blob + \
+                    "   %s: %s/%s:%s \n" % (
+                        pn, pushurl, container_name, options.tag)
+        with open(options.output_file, "w") as fh:
+            fh.write(config_blob)
+    except:
+	if port80opened:
+	    cmd = 'sudo iptables -D INPUT 23'
+            subprocess.check_call(shlex.split(cmd))
+    finally:
+	if port80opened:
+	    cmd = 'sudo iptables -D INPUT 23'
+            subprocess.check_call(shlex.split(cmd))
+
 
 
 if __name__ == "__main__":
