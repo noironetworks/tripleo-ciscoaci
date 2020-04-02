@@ -7,12 +7,50 @@
    dest_file: "/home/stack/overcloud_aci_report.tgz"
 
   tasks:
-  - name: get openstack node list
-    shell: source /home/stack/stackrc && openstack server list -f json
-    register: slist
+  - set_fact:
+      controller_list: []
+      compute_list: []
+
+  - name: get compute uuids
+    shell: source /home/stack/stackrc && openstack stack show overcloud -f json | jq '.outputs | .[] | select(.output_key == "ServerIdData") | .output_value.server_ids.Compute'
+    register: compute_uuids
+
+  - name: get compute node control plane ip
+    #shell: source /home/stack/stackrc && openstack server show {{ item }}  -f json | jq .addresses | cut -d'=' -f2 | sed 's/.$//'
+    shell: source /home/stack/stackrc && openstack server show {{ item }}  -f json 
+    register: compute_results
+    with_items: "{{ compute_uuids.stdout }}"
+
+  - set_fact:
+      compute_json: "{{ compute_json | default([]) + [item.stdout | from_json]  }}"
+    with_items: "{{ compute_results.results }}"
+    
+  - set_fact:
+      compute_list: "{{ compute_list + [ {'Name':item.name, 'Networks': item.addresses, 'Flavor': 'compute'}] }}"
+    with_items: "{{ compute_json }}"
+  
+  - name: get controller uuids
+    shell: source /home/stack/stackrc && openstack stack show overcloud -f json | jq '.outputs | .[] | select(.output_key == "ServerIdData") | .output_value.server_ids.Controller'
+    register: controller_uuids
+
+  - name: get controller node control plane ip
+    shell: source /home/stack/stackrc && openstack server show {{ item }}  -f json 
+    register: controller_results
+    with_items: "{{ controller_uuids.stdout }}"
+
+  - set_fact:
+      control_json: "{{ control_json | default([]) + [item.stdout | from_json]  }}"
+    with_items: "{{ controller_results.results }}"
+    
+  - set_fact:
+      controller_list: "{{ controller_list + [ {'Name':item.name, 'Networks': item.addresses, 'Flavor': 'control'}] }}"
+    with_items: "{{ control_json }}"
+
+  - debug: msg="compute node list {{ compute_list }}"
+  - debug: msg="controller node list {{ controller_list }}"
   
   - set_fact:
-      sl: "{{ slist.stdout }}"
+      sl: "{{ compute_list + controller_list }}"
       remove_flavor_list: []
       exclude_host_list: []
       dest_file: "{{ dest_file }}"
