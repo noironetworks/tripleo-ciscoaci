@@ -135,7 +135,7 @@ outputs:
                   - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
                   - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
             command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci', 
-                      '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', 'upgrade', 'head', '&&',
+                      '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
                       '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&', 
                       '/usr/bin/aimctl', 'config', 'update', '&&', 
                       '/usr/bin/aimctl', 'infra', 'create', '&&', 
@@ -319,7 +319,7 @@ outputs:
           when:
             - step|int == 6
         - name: gbp db upgrade
-          command: /bin/gbp-db-manage --config-file /etc/neutron/neutron.conf upgrade head
+          command: /bin/gbp-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head
           when:
             - step|int == 8
             - is_bootstrap_node|bool
