@@ -279,6 +279,15 @@ outputs:
               when: 
                 - aci_opflex_encap_mode == "vxlan"
 
+            - name: add droplog gen1 port
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric gen1 -- set interface gen1 type=geneve options:remote_ip=flow options:key=1"
+
+            - name: add droplog gen2 port
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-int gen2 -- set interface gen2 type=geneve options:remote_ip=flow options:key=2"
+
+            - name: add droplog iptables
+              command: '/usr/sbin/iptables -t nat -C OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000; RC=$(echo $?); if [[ "${RC}" = "1" ]]; then /usr/sbin/iptables -t nat -A OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000; fi'
+
             # patch port when encap is vlan
             - set_fact:
                 ppname: "{{ opflex_target_bridge_to_patch[0:5] }}"
