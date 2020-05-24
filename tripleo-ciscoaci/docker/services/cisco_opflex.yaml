@@ -292,10 +292,22 @@ outputs:
               command: "ip link set dev br-int up"
 
             - name: add droplog gen1 port
-              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric gen1 -- set interface gen1 type=geneve options:remote_ip=flow options:key=1 && sudo ovs-vsctl set interface gen1 ingress_policing_rate=1000 && sudo ovs-vsctl set interface gen1 ingress_policing_burst=100"
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric gen1 -- set interface gen1 type=geneve options:remote_ip=flow options:key=1"
+
+            - name: set gen1 ingreess policing rate
+              command: "sudo ovs-vsctl set interface gen1 ingress_policing_rate=1000" 
+
+            - name: set gen1 ingreess policing burst
+              command: "sudo ovs-vsctl set interface gen1 ingress_policing_burst=100"
 
             - name: add droplog gen2 port
-              command: "/bin/ovs-vsctl -- --may-exist add-port br-int gen2 -- set interface gen2 type=geneve options:remote_ip=flow options:key=2 && sudo ovs-vsctl set interface gen2 ingress_policing_rate=1000 && sudo ovs-vsctl set interface gen2 ingress_policing_burst=100"
+              command: "/bin/ovs-vsctl -- --may-exist add-port br-int gen2 -- set interface gen2 type=geneve options:remote_ip=flow options:key=2"
+
+            - name: set gen2 ingreess policing rate
+              command: "sudo ovs-vsctl set interface gen2 ingress_policing_rate=1000"
+
+            - name: set gen2 ingreess policing burst
+              command: "sudo ovs-vsctl set interface gen2 ingress_policing_burst=100"
 
             - name: add droplog iptables
               command: 'if [ "$(sudo iptables -t nat -L | grep "udp dpt:6081 to:127.0.0.1:50000" |awk "{print $1}")" = "" ]; then sudo iptables -t nat -A OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000; fi'
