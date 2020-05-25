@@ -78,6 +78,13 @@ parameters:
       Valid values are 'linux' or 'ovs'. This determines whether the infra vlan interface
       is created as a linux interface or an OVS interface. For openshift on openstack, the
       interface should be a OVS interface.
+  ACIOpflexDisabledFeatures:
+    type: comma_delimited_list
+    default: "erspan"
+    description: >
+      Valid values are "erspan". This determines whether a given feature is supported
+      by the vSwitch in the underlying distribution, and therefore can be enabled in the
+      opflex-agent.
   ACIOpflexInterfaceMTU:
     type: number
     default: 1600
@@ -267,6 +274,7 @@ outputs:
             ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}    
             ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
             ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::opflex::opflex_disabled_features: {get_param: ACIOpflexDisabledFeatures}
             ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
             ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
             ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
