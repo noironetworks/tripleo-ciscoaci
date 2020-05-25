@@ -309,9 +309,6 @@ outputs:
             - name: set gen2 ingreess policing burst
               command: "sudo ovs-vsctl set interface gen2 ingress_policing_burst=100"
 
-            - name: add droplog iptables
-              command: 'if [ "$(sudo iptables -t nat -L | grep "udp dpt:6081 to:127.0.0.1:50000" |awk "{print $1}")" = "" ]; then sudo iptables -t nat -A OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000; fi'
-
             # patch port when encap is vlan
             - set_fact:
                 ppname: "{{ opflex_target_bridge_to_patch[0:5] }}"
