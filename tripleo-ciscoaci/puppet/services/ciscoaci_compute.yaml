@@ -53,7 +53,7 @@ parameters:
       is created as a linux interface or an OVS interface. For openshift on openstack, the
       interface should be a OVS interface.
   ACIOpflexDisabledFeatures:
-    type: string
+    type: comma_delimited_list
     default: "erspan"
     description: >
       Valid values are "erspan". This determines whether a given feature is supported
