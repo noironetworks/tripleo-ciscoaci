@@ -14,41 +14,44 @@
         ofile: opflex/ip-netns
     rsync_dirs:
       neutron:
-        rpath: /var/lib/config-data/neutron/*
+        rpath: /var/lib/config-data/neutron/
         lpath: neutron/config-data
       opflex:
-        rpath: /var/lib/config-data/opflex/*
+        rpath: /var/lib/config-data/opflex/
         lpath: opflex/config-data
+      opflex_state:
+        rpath: /tmp/opflex-agent-ovs
+        lpath: opflex
       puppet_neutron:
-        rpath: /var/lib/config-data/puppet-generated/neutron/*
+        rpath: /var/lib/config-data/puppet-generated/neutron/
         lpath: neutron/config-data/puppet-generated
       puppet_opflex:
-        rpath: /var/lib/config-data/puppet-generated/opflex/*
+        rpath: /var/lib/config-data/puppet-generated/opflex/
         lpath: opflex/config-data/puppet-generated
       hiera:
         rpath: /etc/puppet/hieradata
         lpath: hieradata
       neutron_logs:
-        rpath: /var/log/containers/neutron/*
+        rpath: /var/log/containers/neutron/
         lpath: neutron/logs
       nova_logs:
-        rpath: /var/log/containers/nova/*
+        rpath: /var/log/containers/nova/
         lpath: nova/logs
       opflex_logs:
         rpath: /var/log/containers/opflex
         lpath: opflex/logs
     rsync_controller_dirs:
       aim:
-        rpath: /var/lib/config-data/aim/*
+        rpath: /var/lib/config-data/aim/
         lpath: aim/config-data
       puppet_aim:
-        rpath: /var/lib/config-data/puppet-generated/aim/*
+        rpath: /var/lib/config-data/puppet-generated/aim/
         lpath: aim/config-data/puppet-generated
       puppet_nova:
-        rpath: /var/lib/config-data/puppet-generated/nova/*
+        rpath: /var/lib/config-data/puppet-generated/nova/
         lpath: nova/config-data/puppet-generated
       aim_logs:
-        rpath: /var/log/containers/aim/*
+        rpath: /var/log/containers/aim/
         lpath: aim/logs
     commands:
       date:
