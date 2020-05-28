@@ -166,6 +166,10 @@
       with_items: "{{ hostvars[inventory_hostname].docker_output.results }}"
       delegate_to: localhost
       no_log: True
+
+    - name: docker copy
+      shell: "docker cp ciscoaci_opflex_agent:/var/lib/opflex-agent-ovs /tmp"
+      become: true
    
     - name: exec commands
       shell: "{{ item.value.cmd }}"
