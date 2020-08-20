@@ -136,6 +136,11 @@ parameters:
     default: 5672
     description: Set rabbit subscriber port, change this if using SSL
     type: number
+  NeutronPluginExtensions:
+    default: "qos,port_security"
+    description: |
+        Comma-separated list of extensions enabled for the Neutron plugin.
+    type: comma_delimited_list
   NeutronNetworkVLANRanges:
     default: ''
     description: >
@@ -266,6 +271,7 @@ outputs:
             ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
+            ciscoaci::ml2::extension_drivers: { get_param: NeutronPluginExtensions }
             ciscoaci::ml2::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
             ciscoaci::aim_config::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
             ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
