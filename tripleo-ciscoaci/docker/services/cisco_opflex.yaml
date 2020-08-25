@@ -211,6 +211,7 @@ outputs:
             - name: get mapped interface
               command: "os-net-config -i {{ raw_u_intf }}"
               register: intf_out
+              ignore_errors: true
             
             - set_fact:
                  intf_json: "{{ intf_out.stdout | to_json }}"
@@ -220,10 +221,15 @@ outputs:
                  aci_opflex_uplink_interface: "{{ item.value }}"
               when: item.key is defined and item.key == raw_u_intf
               with_dict: "{{ intf_json | from_json }}"
+
+            - set_fact:
+                 aci_opflex_uplink_interface: "{{ oui.stdout }}"
+              when: aci_opflex_uplink_interface is not defined
        
             - name: bring down opflex infra vlan interface
               command: ifdown vlan"{{ aci_apic_infravlan }}"
               ignore_errors: True
+
             - name: delete interfaces file
               file:
                 path: /etc/sysconfig/network-interfaces/vlan"{{ aci_apic_infravlan  }}"
