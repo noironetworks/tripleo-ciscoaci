@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/libexec/platform-python
 
-import ConfigParser
+import configparser
 import datetime
 import getpass
 import glob
@@ -14,64 +14,70 @@ import sys
 import subprocess
 import tarfile
 import tempfile
+import json
+import re
 import pdb
 from hashlib import md5
 
-CISCOACI_RPMDIR = "/var/www/html/acirepo"
+CISCOACI_RPMDIR = "/opt/cisco_aci_rpms"
 
 
 def determine_ucloud_ip():
     print("Trying to determine the Undercloud ip from /etc/ironic/ironic.conf file")
-    ironic_config_file = "/etc/ironic/ironic.conf"
+    ironic_config_file = "/var/lib/config-data/puppet-generated/ironic_api/etc/ironic/ironic.conf"
 
     if not os.path.exists(ironic_config_file):
         raise Exception(
             "File %s does not exist. Maybe undercloud is not configured." % ironic_config_file)
 
-    config = ConfigParser.SafeConfigParser()
-    config.read("/etc/ironic/ironic.conf")
+    config = configparser.SafeConfigParser()
+    config.read(ironic_config_file)
     try:
         uip = config.get('DEFAULT', 'my_ip')
     except:
-	return 1
+        return 1
     else:
         return uip
 
 
-def build_containers(upstream_registry, regseparator, pushurl, pushtag, container_name, arr, repotext):
-    print "Building ACI %s container" % container_name
+def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushtag, container_name, arr, repotext):
+    print("Building ACI %s container" % container_name)
 
     aci_pkgs = arr['packages']
     docker_run_cmds = arr['run_cmds']
-    rhel_container = "%s%s%s:latest" % (upstream_registry, regseparator,
+    rhel_container = "%s%s%s:16.1" % (upstream_registry, regseparator,
                                        arr['rhel_container'])
     if "aci_container" in arr.keys():
-        aci_container = arr['aci_container']
+        aci_container = "%s/%s" %(pushurl, arr['aci_container'])
     else:
-        aci_container = "%s-ciscoaci" % arr['rhel_container']
+        aci_container = "%s/%s-ciscoaci" % (pushurl, arr['rhel_container'])
+
     if 'user' in arr.keys():
         user = arr['user']
     else:
         user = ''
 
+    d_user = subprocess.check_output(
+        ['podman', 'run', '--net=host', '--name', '%s-temp' % container_name, rhel_container, 'whoami'])
+    def_user = d_user.decode('utf-8').strip()
+
+    subprocess.check_call(["podman", "rm", '%s-temp' % container_name])
+
     build_dir = tempfile.mkdtemp()
-    def_user = subprocess.check_output(
-        ['docker', 'run', '--name', container_name, rhel_container, 'whoami'])
-
-    subprocess.check_call(["docker", "rm", container_name])
-
+    shutil.copytree('/opt/cisco_aci_repo', '%s/opt/cisco_aci_repo' % build_dir)
     repofile = os.path.join(build_dir, 'aci.repo')
     with open(repofile, 'w') as fh:
-	fh.write(repotext)
+       fh.write(repotext)
 
     blob = """
 FROM %s
 MAINTAINER Cisco Systems
-LABEL name="rhosp13/%s" vendor="Cisco Systems" version="13.0" release="1"
+LABEL name="%s" vendor="Cisco Systems" version="16.1" release="1"
 USER root
-       """ % (rhel_container, aci_container)
-    blob = blob + "RUN yum repolist --disablerepo=* && yum-config-manager --disable \* > /dev/null \n"
-    blob = blob + "RUN yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-13-rpms rhel-7-server-rhceph-3-tools-rpms \n"
+ENV no_proxy="${no_proxy},%s"
+       """ % (rhel_container, aci_container, ucloud_ip)
+    blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms \n"
+    blob = blob + "ADD /opt/cisco_aci_repo /opt/cisco_aci_repo \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
@@ -84,26 +90,27 @@ USER root
     with open(dockerfile, 'w') as df:
         df.write(blob)
 
-    subprocess.check_call(["docker", "build", build_dir, "-t",
-                           "%s/%s:%s" % (pushurl, aci_container, pushtag)])
+    subprocess.check_call(["podman", "build", build_dir, "-t",
+                           "%s:%s" % (aci_container, pushtag)])
 
-    subprocess.check_call(
-        ["docker", "push", "%s/%s:%s" % (pushurl, aci_container, pushtag)])
+    cmd ="openstack tripleo container image push --local %s:%s" % (aci_container, pushtag)
+    subprocess.check_call(shlex.split(cmd))
 
     shutil.rmtree(build_dir)
 
-    subprocess.check_call(["docker", "rmi", rhel_container])
-    subprocess.check_call(
-        ["docker", "rmi", "%s/%s:%s" % (pushurl, aci_container, pushtag)])
+    subprocess.check_call(["podman", "rmi", rhel_container])
+
+    ccmd ="podman rmi %s:%s" % (aci_container, pushtag)
+    subprocess.check_call(shlex.split(ccmd))
 
 
 def main():
     timestamp = datetime.datetime.now().strftime('%s')
 
     def extant_file(x):
-	if not os.path.exists(x):
-	    raise argparse.ArgumentTypeError("{0} does not exist".format(x))
-	return x
+        if not os.path.exists(x):
+           raise argparse.ArgumentTypeError("{0} does not exist".format(x))
+        return x
 
     parser = argparse.ArgumentParser(description='Build containers for ACI Plugin')
 
@@ -117,7 +124,7 @@ def main():
                       help="Containers to build, comma separated, default is all", dest='containers_tb', default='all')
     parser.add_argument("-s", "--upstream",
                       help="Upstream registry to pull base images from, eg. registry.access.redhat.com/rhosp13, defaults to registry.access.redhat.com/rhosp13",
-                      default='registry.access.redhat.com/rhosp13',
+                      default='registry.redhat.io/rhosp-rhel8',
                       dest='upstream_registry')
     parser.add_argument("-d", "--destregistry",
                       help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp13",
@@ -148,101 +155,113 @@ def main():
     current_user = getpass.getuser()
     current_grp = grp.getgrgid(pwd.getpwnam('stack').pw_gid).gr_name
 
+    if not options.ucloud_ip:
+       ucloud_ip = determine_ucloud_ip()
+       if ucloud_ip == 1:
+          print("Unable to determine undercloud ip. Please use -u option to specify")
+          sys.exit(1)
+    else:
+          ucloud_ip = options.ucloud_ip
+
     if options.repo_tar_file:
-	m=md5()
-	with open(options.repo_tar_file, 'r') as fh:
-	    data = fh.read()
-	m.update(data)
-	md5sum = m.hexdigest()
+       m=md5()
+       with open(options.repo_tar_file, 'rb') as fh:
+         data = fh.read()
+       m.update(data)
+       md5sum = m.hexdigest()
 
-	with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
-	    expected_md5sum = fh.read()
+       with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
+           expected_md5sum = fh.read()
 
-	if not (md5sum == expected_md5sum.strip()):
-	    if not options.force:
-		print("md5sum of provided tar file does not match with expected. Use --force to disable this check'")
-		sys.exit(1)
+       if not (md5sum == expected_md5sum.strip()):
+          if not options.force:
+             print("md5sum of provided tar file does not match with expected. Use --force to disable this check'")
+             sys.exit(1)
 
-	if not options.ucloud_ip:
-	    ucloud_ip = determine_ucloud_ip()
-	    if ucloud_ip == 1:
-		print("Unable to determine undercloud ip. Please use -u option to specify")
-		sys.exit(1)
-	else:
-	    ucloud_ip = options.ucloud_ip
 
-	os.system("sudo rm -rf /var/www/html/acirepo")
-	os.system("sudo /usr/bin/mkdir -p /var/www/html/acirepo")
-	os.system("sudo chown {0} /var/www/html/acirepo".format(current_user))
-	os.system("sudo chgrp {0} /var/www/html/acirepo".format(current_grp))
-	tf = tarfile.open(options.repo_tar_file)
-	tf.extractall('/var/www/html/acirepo')
-	repotext = """
+       os.system("sudo rm -rf /opt/cisco_aci_repo")
+       os.system("sudo /usr/bin/mkdir -p /opt/cisco_aci_repo")
+       os.system("sudo chown {0} /opt/cisco_aci_repo".format(current_user))
+       os.system("sudo chgrp {0} /opt/cisco_aci_repo".format(current_grp))
+       tf = tarfile.open(options.repo_tar_file)
+       tf.extractall('/opt/cisco_aci_repo')
+       repotext = """
 [acirepo]
 name=aci repo
-baseurl=http://%s/acirepo/
+baseurl=file:///opt/cisco_aci_repo
 enabled=1
 gpgcheck=0
-	""" % (ucloud_ip)
+       """ 
     else:
-	with open(options.aci_repo_file, 'r') as fh:
-	    repotext = fh.read()
+       with open(options.aci_repo_file, 'r') as fh:
+          repotext = fh.read()
 
-    if not options.destination_registry:
-        ucloud_ip = determine_ucloud_ip()
-	if ucloud_ip == 1:
-	    print("Unable to determine undercloud ip. Please specify destination_registry option value.")
-	    sys.exit(1)
-        pushurl = "%s:8787/rhosp13" % ucloud_ip
-    else:
+    if options.destination_registry:
         pushurl = options.destination_registry
+    else:
+        cmd = "openstack tripleo container image list -f json"
+        print("Running cmd '%s' to get local registry" % cmd)
+        output = subprocess.check_output(shlex.split(cmd))
+        jl = json.loads(output)
+        for el in jl:
+           if re.search('ironic', el['Image Name']):
+              rg = re.search('^docker://([^/]*)' , el['Image Name'])
+              if rg:
+                 pushurl = "%s/ciscoaci" % rg.groups()[0]
+              else:
+                 print("Unable to determine local registry")
+                 sys.exit(1)
+              break
+           else:
+              print("Unable to determine local registry")
+              sys.exit(1)
 
     container_array = {
         'horizon': {
             "rhel_container": "openstack-horizon",
             "packages": [],
-            "run_cmds": ["yum -y install openstack-dashboard-gbp",
+            "run_cmds": ["yum -y install python3-openstack-dashboard-gbp",
                          "mkdir -p /usr/lib/heat",
                          "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python2.7/site-packages/openstack_dashboard/local/enabled"],
-            "osd_param_name": ["DockerHorizonImage"],
+            "osd_param_name": ["ContainerHorizonImage"],
 
         },
         'heat': {
             "rhel_container": "openstack-heat-engine",
             "packages": [],
-            "run_cmds": ["yum -y install openstack-heat-gbp python-gbpclient",
+            "run_cmds": ["yum -y install python3-openstack-heat-gbp python3-gbpclient",
                          "mkdir -p /usr/lib/heat",
-                         "cp -r /usr/lib/python2.7/site-packages/gbpautomation /usr/lib/heat"],
-            "osd_param_name": ["DockerHeatEngineImage"],
+                         "cp -r /usr/lib/python3.6/site-packages/gbpautomation /usr/lib/heat"],
+            "osd_param_name": ["ContainerHeatEngineImage"],
         },
         'neutron-server': {
             "rhel_container": "openstack-neutron-server",
             "packages": [],
-            "run_cmds": ["yum -y install apicapi neutron-opflex-agent libmodelgbp openstack-neutron-gbp python2-networking-sfc ciscoaci-puppet python-gbpclient aci-integration-module "],
-            "osd_param_name": ["DockerNeutronApiImage", "DockerNeutronConfigImage"],
+            "run_cmds": ["yum -y install python3-apicapi python3-neutron-opflex-agent libmodelgbp python3-openstack-neutron-gbp ciscoaci-puppet python3-gbpclient python3-aci-integration-module "],
+            "osd_param_name": ["ContainerNeutronApiImage", "ContainerNeutronConfigImage"],
         },
         'ciscoaci-lldp': {
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-lldp",
             "packages": [],
-            "run_cmds": ["yum -y install aci-integration-module neutron-opflex-agent ciscoaci-puppet ethtool apicapi lldpd "],
-            "osd_param_name": ["DockerCiscoLldpImage"],
+            "run_cmds": ["yum -y install python3-aci-integration-module python3-neutron-opflex-agent ciscoaci-puppet ethtool python3-apicapi lldpd "],
+            "osd_param_name": ["ContainerCiscoLldpImage"],
             "user": 'root',
         },
         'ciscoaci-aim': {
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-aim",
             "packages": [],
-            "run_cmds": ["yum -y install apicapi ciscoaci-puppet aci-integration-module neutron-opflex-agent openstack-neutron-gbp python-gbpclient "],
-            "osd_param_name": ["DockerCiscoAciAimImage"],
+            "run_cmds": ["yum -y install python3-apicapi ciscoaci-puppet python3-aci-integration-module python3-neutron-opflex-agent python3-openstack-neutron-gbp python3-gbpclient "],
+            "osd_param_name": ["ContainerCiscoAciAimImage", "ContainerCiscoAciAimConfigImage"],
             "user": 'root',
         },
         'opflex-agent': {
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-opflex",
             "packages": [],
-            "run_cmds": ["yum -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool neutron-opflex-agent apicapi openstack-neutron-gbp python2-networking-sfc lldpd"],
-            "osd_param_name": ["DockerOpflexAgentImage"],
+            "run_cmds": ["yum -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd"],
+            "osd_param_name": ["ContainerOpflexAgentImage"],
             "user": 'root',
         },
     }
@@ -257,30 +276,23 @@ gpgcheck=0
             else:
                 print("Unknown container name %s, skipping" % co)
 
-    port80opened = False
-    if options.repo_tar_file:
-       cmd = 'sudo iptables -I INPUT 23 -p tcp -m multiport --dports 80 -m state --state NEW -m comment --comment "ciscoaci open port 80" -j ACCEPT'
-       subprocess.check_call(shlex.split(cmd))
-       port80opened = True
-
     for container in containers_list:
-	build_containers(options.upstream_registry, options.regseparator, pushurl,
-		    options.tag, container, container_array[container], repotext)
+        build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
+              options.tag, container, container_array[container], repotext)
 
     config_blob = "parameter_defaults:\n"
     for container in containers_list:
-	param_names = container_array[container]['osd_param_name']
-        if "aci_container" in container_array[container].keys():
-	    container_name = container_array[container]['aci_container']
-        else:
-	    container_name = "%s-ciscoaci" % container_array[container]['rhel_container']
-        for pn in param_names:
-	    config_blob = config_blob + \
+       param_names = container_array[container]['osd_param_name']
+       if "aci_container" in container_array[container].keys():
+          container_name = container_array[container]['aci_container']
+       else:
+          container_name = "%s-ciscoaci" % container_array[container]['rhel_container']
+       for pn in param_names:
+          config_blob = config_blob + \
                 "   %s: %s/%s:%s \n" % (
                     pn, pushurl, container_name, options.tag)
     with open(options.output_file, "w") as fh:
-	fh.write(config_blob)
-
+       fh.write(config_blob)
 
 
 if __name__ == "__main__":

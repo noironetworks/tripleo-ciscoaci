@@ -4,7 +4,7 @@ description: >
   OpenStack Cisco Aci lldp service
 
 parameters:
-  DockerCiscoLldpImage:
+  ContainerCiscoLldpImage:
     description: image
     type: string
   ServiceData:
@@ -41,7 +41,7 @@ parameters:
 resources:
 
   ContainersCommon:
-    type: /usr/share/openstack-tripleo-heat-templates/docker/services/containers-common.yaml
+    type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
 
 outputs:
   role_data:
@@ -52,7 +52,7 @@ outputs:
         config_volume: neutron
         puppet_tags: 
         step_config: include ciscoaci::lldp
-        config_image: {get_param: DockerCiscoLldpImage}
+        config_image: {get_param: ContainerCiscoLldpImage}
         volumes:
           - /lib/modules:/lib/modules:ro
       kolla_config:
@@ -67,15 +67,12 @@ outputs:
             - path: /var/log/neutron
               owner: neutron:neutron
               recurse: true
-            - path: /var/lib/neutron
-              owner: neutron:neutron
-              recurse: true
-      docker_config_scripts: {get_attr: [ContainersCommon, docker_config_scripts]}
+      container_config_scripts: {get_attr: [ContainersCommon, container_config_scripts]}
       docker_config:
         step_4:
           ciscoaci_lldp_agent:
             start_order: 10
-            image: {get_param: DockerCiscoLldpImage}
+            image: {get_param: ContainerCiscoLldpImage}
             net: host
             pid: host
             privileged: true
@@ -89,10 +86,9 @@ outputs:
                   - /var/lib/kolla/config_files/ciscoaci_lldp.json:/var/lib/kolla/config_files/config.json:ro
                   - /lib/modules:/lib/modules:ro
                   - /var/lib/config-data/puppet-generated/neutron/:/var/lib/kolla/config_files/src:ro
-                  - /var/lib/neutron:/var/lib/neutron
                   - /var/log/containers/neutron:/var/log/neutron
             environment:
-              - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
+              KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
       metadata_settings:
       host_prep_tasks: 
             - name: create persistent logs directory for cisco opflex agent

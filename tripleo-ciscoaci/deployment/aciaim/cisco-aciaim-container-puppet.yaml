@@ -1,0 +1,567 @@
+heat_template_version: rocky
+
+description: >
+  OpenStack containerized Cisco ACI AIM service
+
+parameters:
+  ContainerCiscoAciAimImage:
+    description: image
+    type: string
+  ContainerCiscoAciAimConfigImage:
+    description: image
+    type: string
+  EndpointMap:
+    default: {}
+    description: Mapping of service endpoint -> protocol. Typically set
+                 via parameter_defaults in the resource registry.
+    type: json
+  ServiceData:
+    default: {}
+    description: Dictionary packing service data
+    type: json
+  ServiceNetMap:
+    default: {}
+    description: Mapping of service_name -> network name. Typically set
+                 via parameter_defaults in the resource registry.  This
+                 mapping overrides those in ServiceNetMapDefaults.
+    type: json
+  DefaultPasswords:
+    default: {}
+    type: json
+  RoleName:
+    default: ''
+    description: Role name on which the service is applied
+    type: string
+  RoleParameters:
+    default: {}
+    description: Parameters specific to the role
+    type: json
+  DeployIdentifier:
+    default: ''
+    type: string
+    description: >
+      Setting this to a unique value will re-run any deployment tasks which
+      perform configuration on a Heat stack-update.
+  UpgradeRemoveUnusedPackages:
+    default: false
+    description: Remove package if the service is being disabled during upgrade
+    type: boolean
+  NeutronApiOptVolumes:
+    default: []
+    description: list of optional volumes to be mounted
+    type: comma_delimited_list
+  NeutronApiOptEnvVars:
+    default: []
+    description: list of optional environment variables
+    type: comma_delimited_list
+  ACIApicHosts:
+    default: {}
+    description: APIC ip address
+    type: string
+    default: 1.1.1.1
+  ACIApicUsername:
+    type: string
+    default: admin
+  ACIApicPassword:
+    type: string
+    default: ''
+  ACIApicCertName:
+    type: string
+    default: ''
+  ACIApicPrivateKey:
+    type: string
+    default: ''
+  ACIApicSystemId:
+    type: string
+    default: 'aci_openstack'
+  ACIApicInfraVlan:
+    type: number
+    default: 4093
+  ACIApicEntityProfile:
+    type: string
+    default: 'openstack-aep'
+  ACIMechanismDrivers:
+    type: string
+    default: 'apic_aim'
+    description: >
+     set the value to the ml2 drivers required. In most cases the default is sufficient,
+     in cases when using sriov for example set it to 'sriovnicswitch,apic_aim'
+  ACIApicInfraSubnetGateway:
+    type: string
+    default: '10.0.0.30'
+  ACIApicInfraAnycastAddr:
+    type: string
+    default: '10.0.0.32'
+  ACIOpflexUplinkInterface:
+    type: string
+    default: 'nic1'
+  ACIOpflexInterfaceType:
+    type: string
+    default: 'linux'
+    description: >
+      Valid values are 'linux' or 'ovs'. This determines whether the infra vlan interface
+      is created as a linux interface or an OVS interface. For openshift on openstack, the
+      interface should be a OVS interface.
+  ACIOpflexDisabledFeatures:
+    type: comma_delimited_list
+    default: "erspan"
+    description: >
+      Valid values are "erspan". This determines whether a given feature is supported
+      by the vSwitch in the underlying distribution, and therefore can be enabled in the
+      opflex-agent.
+  ACIOpflexInterfaceMTU:
+    type: number
+    default: 1600
+  ACIOpflexBridgeToPatch:
+    type: string
+    default: 'br-ex'
+    description: >
+     When opflex is used in VLAN encap mode, the interface connected to ACI fabric should
+     be part of integration bridge br-int. In some network configuration, the interface could
+     already be part of other bridge for example br-ex. Setting this value to br-ex will create
+     a patch interface between br-int and br-ex. If set to empty string, no patch will be created
+  ACIOpflexEncapMode:
+    type: string
+    default: 'vxlan'
+    constraints:
+      - allowed_values: ['vlan', 'vxlan']
+  ACIOpflexVlanRange:
+    default: ''
+    description: >
+      The vlan ranges to use when encap mode is vlan. If ACIOpflexEncapMode is vxlan, this option is
+      ignored
+    type: comma_delimited_list
+  ACIHostLinks:
+    type: json
+    default: {}
+    description: >
+       Describes the host connections to switches in json format. Example
+       '{"101":{"ha.dom":"1/1", "hb.dom":"1/2"}, "102":{"hc.dom":"1/1"} }'
+       ha.dom host is connected to port 1/1 of switch id 101
+       hb.dom host is connected to port 1/2 of switch id 101
+       hc.dom is connected to port 1/1 of switch id 102
+  ACIVpcPairs:
+    type: string
+    default: ''
+    description: comma separated string of switch id's which form vpc pairs. Example '101:102,103:104'
+  ACIOptimizedMetadata:
+    type: boolean
+    default: true
+    description: Enable Optimized Metadata service
+  ACIScopeNames:
+    type: boolean
+    default: false
+    description: Enable scoping of names with apic_system_id
+  ACIScopeInfra:
+    type: boolean
+    default: false
+    description: Enable scoping of Infra names with apic_system_id
+  NeutronPassword:
+    description: The password for the neutron service and db account, used by neutron agents.
+    type: string
+    hidden: true
+  RabbitPassword:
+    description: The password for RabbitMQ
+    type: string
+    hidden: true
+  RabbitUserName:
+    default: guest
+    description: The username for RabbitMQ
+    type: string
+  RabbitClientPort:
+    default: 5672
+    description: Set rabbit subscriber port, change this if using SSL
+    type: number
+  NeutronNetworkVLANRanges:
+    default: ''
+    description: >
+      Use this option if using hierarchial portbinding. This value will be
+      plugged into ml2_type_vlan section of plugin.ini if it is not blank
+      example value datacentre:1000:2000
+    type: comma_delimited_list
+  NeutronPhysicalDevMappings:
+    description: >
+      List of <physical_network>:<physical device>
+      All physical networks listed in network_vlan_ranges
+      on the server should have mappings to appropriate
+      interfaces on each agent.
+    type: comma_delimited_list
+    default: ""
+  OpflexEndpointReqTimeout:
+    default: 10
+    type: number
+  OpflexNatMtuSize:
+    default: 0
+    type: number
+  OpflexLoggingLevel:
+    default: debug2
+    type: string
+  AciKeystoneNotificationPurge:
+    type: boolean
+    default: true
+    description: >
+      When true, act on keystone notifications to purge
+  AciOpenvswitch:
+    type: boolean
+    default: false
+  AciTenantNetworkType:
+    type: string
+    default: 'opflex'
+  IntelCnaNicDisableLLDP:
+    type: boolean
+    default: true
+  AciExternalRoutedDomain:
+    type: string
+    default: ""
+  ACIAimDebug:
+    type: boolean
+    default: false
+  NeutronExternalBridge:
+    type: string
+    default: 'br-ex'
+    description: >
+       Opflex depends on knowing what the external bridge name is, which by default is br-ex
+       If neutron configuration was changed to some other name, this variable needs to be set
+       to the same value.
+  OpflexLoggingLevel:
+    default: debug2
+    type: string
+  AciVmmMcastRanges:
+    type: string
+    default: "225.2.1.1:225.2.255.255"
+  AciVmmMulticastAddress:
+    type: string
+    default: "225.1.2.3"
+
+resources:
+
+  ContainersCommon:
+    type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
+
+  MySQLClient:
+    type: /usr/share/openstack-tripleo-heat-templates/deployment/database/mysql-client.yaml
+
+  NeutronMl2Base:
+      type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-plugin-ml2.yaml
+      properties:
+        ServiceData: {get_param: ServiceData}
+        ServiceNetMap: {get_param: ServiceNetMap}
+        DefaultPasswords: {get_param: DefaultPasswords}
+        EndpointMap: {get_param: EndpointMap}
+        RoleName: {get_param: RoleName}
+        RoleParameters: {get_param: RoleParameters}
+
+outputs:
+  role_data:
+    description: Role data for the Aci AIM role.
+    value:
+      service_name: neutron_plugin_ciscoaci
+      config_settings:
+        map_merge:
+          - get_attr: [NeutronMl2Base, role_data, config_settings]
+          - ciscoaci::aim_config::neutron_sql_connection:
+              make_url:
+                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
+                username: neutron
+                password: {get_param: NeutronPassword}
+                host: {get_param: [EndpointMap, MysqlInternal, host]}
+                path: /ovs_neutron
+                query:
+                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+                  read_default_group: tripleo
+            ciscoaci::aim_config::aci_apic_hosts: {get_param: ACIApicHosts}
+            ciscoaci::aim_config::aci_apic_username: {get_param: ACIApicUsername}
+            ciscoaci::aim_config::aci_apic_password: {get_param: ACIApicPassword}
+            ciscoaci::aim_config::aci_apic_certname: {get_param: ACIApicCertName}
+            ciscoaci::aim_config::aci_apic_privatekey: {get_param: ACIApicPrivateKey}
+            ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::aim_config::aci_apic_aep: {get_param: ACIApicEntityProfile}
+            ciscoaci::aim_config::aci_vpc_pairs: {get_param: ACIVpcPairs}
+            ciscoaci::aim_config::aci_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::aim_config::aci_opflex_vlan_range: {get_param: ACIOpflexVlanRange}
+            ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
+            ciscoaci::aim_config::aci_scope_infra: {get_param: ACIScopeInfra}
+            ciscoaci::aim_config::aci_host_links: {get_param: ACIHostLinks}
+            ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
+            ciscoaci::aim_config::aci_scope_infra: {get_param: ACIScopeInfra}
+            ciscoaci::aim_config::aci_aim_debug: {get_param: ACIAimDebug}
+            ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
+            ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
+            ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}
+            ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
+            ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::opflex::opflex_disabled_features: {get_param: ACIOpflexDisabledFeatures}
+            ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
+            ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
+            ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
+            ciscoaci::aim_config::use_openvswitch: {get_param: AciOpenvswitch}
+            ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
+            ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
+            ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
+            ciscoaci::aim_config::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
+            ciscoaci::aim_config::aci_external_routed_domain_name: {get_param: AciExternalRoutedDomain}
+            ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+            ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
+            ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
+            ciscoaci::aim_config::multicast_address: {get_param: AciVmmMulticastAddress}
+            ciscoaci::aim_config::use_openvswitch: {get_param: AciOpenvswitch}
+            ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
+            ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
+            ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
+      # BEGIN DOCKER SETTINGS
+      puppet_config:
+        config_volume: aim
+        puppet_tags: aim_conf,aimctl_config
+        step_config:
+          list_join:
+            - "\n"
+            - - include tripleo::profile::base::ciscoaci_aim
+              - {get_attr: [MySQLClient, role_data, step_config]}
+        config_image: {get_param: ContainerCiscoAciAimConfigImage}
+      kolla_config:
+        /var/lib/kolla/config_files/ciscoaci_aim.json:
+          command:
+            list_join:
+            - ' '
+            - - /bin/supervisord -c /etc/aim/aim_supervisord.conf
+          config_files:
+            - source: "/var/lib/kolla/config_files/src/*"
+              dest: "/"
+              merge: true
+              preserve_properties: true
+          permissions:
+            - path: /var/log/aim
+              owner: root:root
+              recurse: true
+      container_config_scripts: {get_attr: [ContainersCommon, container_config_scripts]}
+      docker_config:
+#        step_2: 
+#          create_aim_config:
+#            start_order: 1
+#            detach: false
+#            net: host
+#            pid: host
+#            user: root
+#            command: # '/container_puppet_apply.sh "STEP" "TAGS" "CONFIG" "DEBUG"'
+#              list_concat:
+#                -
+#                  - '/container_puppet_apply.sh'
+#                  - '4'
+#                  - 'file,aim_conf,aimctl_config'
+#                  - 'include ::tripleo::profile::base::ciscoaci_aim'
+#            image: {get_param: ContainerCiscoAciAimConfigImage}
+#            volumes:
+#              list_concat:
+#                - {get_attr: [ContainersCommon, container_puppet_apply_volumes]}
+        step_3:
+          aim_db_migrate:
+            start_order: 5
+            image: &ciscoaci_aim_image {get_param: ContainerCiscoAciAimImage}
+            net: host
+            privileged: false
+            detach: false
+            user: root
+            volumes:
+              list_concat:
+                - {get_attr: [ContainersCommon, volumes]}
+                -
+                  - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
+                  - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
+                  - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
+            command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci', 
+                      '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
+                      '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&', 
+                      '/usr/bin/aimctl', 'config', 'update', '&&', 
+                      '/usr/bin/aimctl', 'infra', 'create', '&&', 
+                      '/usr/bin/aimctl', 'manager', 'load-domains']
+            environment:
+              TRIPLEO_DEPLOY_IDENTIFIER: {get_param: DeployIdentifier}
+        step_4:
+          ciscoaci_aim:
+            start_order: 11
+            image: {get_param: ContainerCiscoAciAimImage}
+            net: host
+            pid: host
+            privileged: true
+            restart: always
+            healthcheck:
+              test: /etc/aim/aim_healthcheck
+            volumes:
+              list_concat:
+                - {get_attr: [ContainersCommon, volumes]}
+                -
+                  - /var/lib/kolla/config_files/ciscoaci_aim.json:/var/lib/kolla/config_files/config.json:ro
+                  - /var/lib/config-data/puppet-generated/aim/:/var/lib/kolla/config_files/src:ro
+                  - /lib/modules:/lib/modules:ro
+                  - /var/log/containers/aim:/var/log/aim
+            environment:
+              KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
+        #step_5:
+        #  ciscoaci_physnet_map:
+        #    start_order: 1
+        #    image: {get_param: ContainerCiscoAciAimImage}
+        #    net: host
+        #    privileged: false
+        #    detach: false
+        #    user: root
+        #    volumes:
+        #      list_concat:
+        #        - {get_attr: [ContainersCommon, volumes]}
+        #        -
+        #          - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
+        #          - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
+        #          - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
+        #          - /var/lib/config-data/neutron/usr/share/neutron:/usr/share/neutron:ro
+        #    command: ['/usr/bin/bootstrap_host_exec','neutron_plugin_ciscoaci', '/etc/aim/physnet_mapping.sh']
+        #    environment:
+        #      KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
+      host_prep_tasks: 
+        - name: create persistent logs directory for cisco aci aim
+          file:
+            path: /var/log/containers/aim
+            state: directory
+      metadata_settings:
+        get_attr: [NeutronMl2Base, role_data, metadata_settings]
+      upgrade_tasks:
+        - name: Check if aim-aid is deployed
+          command: systemctl is-enabled --quiet aim-aid
+          tags: common
+          ignore_errors: True
+          register: aim_aid_enabled
+        - name: "PreUpgrade step0,validation: Check service aim-aid is running"
+          command: systemctl is-active --quiet aim-aid
+          when:
+            - step|int == 0
+            - aim_aid_enabled.rc == 0
+          tags: validation
+        - name: Stop and disable aim-aid service
+          when:
+            - step|int == 2
+            - aim_aid_enabled.rc == 0
+          service: name=aim-aid state=stopped enabled=no
+
+        - name: Check if aim-event-service-polling is deployed
+          command: systemctl is-enabled --quiet aim-event-service-polling
+          tags: common
+          ignore_errors: True
+          register: aim_event_service_polling_enabled
+        - name: "PreUpgrade step0,validation: Check service aim-event-service-polling is running"
+          command: systemctl is-active --quiet aim-event-service-polling
+          when:
+            - step|int == 0
+            - aim_event_service_polling_enabled.rc == 0
+          tags: validation
+        - name: Stop and disable aim-event-service-polling service
+          when:
+            - step|int == 2
+            - aim_event_service_polling_enabled.rc == 0
+          service: name=aim-event-service-polling state=stopped enabled=no
+
+        - name: Check if aim-event-service-rpc is deployed
+          command: systemctl is-enabled --quiet aim-event-service-rpc
+          tags: common
+          ignore_errors: True
+          register: aim_event_service_rpc_enabled
+        - name: "PreUpgrade step0,validation: Check service aim-event-service-rpc is running"
+          command: systemctl is-active --quiet aim-event-service-rpc
+          when:
+            - step|int == 0
+            - aim_event_service_rpc_enabled.rc == 0
+          tags: validation
+        - name: Stop and disable aim-event-service-rpc service
+          when:
+            - step|int == 2
+            - aim_event_service_rpc_enabled.rc == 0
+          service: name=aim-event-service-rpc state=stopped enabled=no
+
+        - name: Set fact for removal of aci-integration-module package
+          when: step|int == 2
+          set_fact:
+            remove_aci_integration_module: {get_param: UpgradeRemoveUnusedPackages}
+        - name: Remove aci_integration_module package if operator requests it
+          yum: name=aci-integration-module state=removed
+          ignore_errors: True
+          when:
+            - step|int == 2
+            - remove_aci_integration_module|bool
+      fast_forward_upgrade_tasks:
+        - name: Remove neutron-ml2-driver-apic package
+          yum: name=neutron-ml2-driver-apic state=removed
+          ignore_errors: True
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Check if aim is deployed
+          command: systemctl is-enabled --quiet aim-aid
+          ignore_errors: True
+          register: aim_aid_enabled_result
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Set fact aim_aid_enabled
+          set_fact:
+            aim_aid_enabled: "{{ aim_aid_enabled_result.rc == 0 }}"
+          when:
+            - step|int == 0
+            - release == 'ocata'
+        - name: Stop aim-aid
+          service: name=aim-aid state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - aim_aid_enabled|bool
+        - name: Stop aim-event-service-polling
+          service: name=aim-event-service-polling state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - aim_aid_enabled|bool
+        - name: Stop aim-event-service-rpc
+          service: name=aim-event-service-rpc state=stopped enabled=no
+          when:
+            - step|int == 1
+            - release == 'ocata'
+            - aim_aid_enabled|bool
+
+        - name: Neutron package update
+          shell: yum -y update openstack-neutron*
+          when:
+            - step|int == 7
+            - is_bootstrap_node|bool
+        - name: Neutron package update workaround
+          yum: name=python-networking-odl state=latest
+          when:
+            - step|int == 6
+            - is_bootstrap_node|bool
+        - name: Neutron db sync
+          command: neutron-db-manage upgrade head
+          when:
+            - step|int == 8
+            - is_bootstrap_node|bool
+
+        - name: GBP package update
+          shell: yum -y update openstack-neutron-gbp
+          when:
+            - step|int == 6
+            - is_bootstrap_node|bool
+        - name: AIM package update
+          shell: yum -y update aci-integration-module apicapi
+          when:
+            - step|int == 6
+            - is_bootstrap_node|bool
+        - name: ciscoaci puppet package update
+          shell: yum -y update ciscoaci-puppet
+          when:
+            - step|int == 6
+        - name: gbp db upgrade
+          command: /bin/gbp-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head
+          when:
+            - step|int == 8
+            - is_bootstrap_node|bool
+        #- name: Aim db sync
+        #  command: /usr/bin/aimctl db-migration upgrade head
+        #  when:
+        #    - step|int == 8
+        #    - is_bootstrap_node|bool
