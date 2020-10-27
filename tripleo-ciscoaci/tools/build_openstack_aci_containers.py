@@ -192,6 +192,9 @@ baseurl=file:///opt/cisco_aci_repo
 enabled=1
 gpgcheck=0
        """ 
+       os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
+       os.system("cp /opt/cisco_aci_repo/ciscoaci-puppet-* /var/lib/image-serve/v2/__acirepo")
+       os.system("createrepo /var/lib/image-serve/v2/__acirepo")
     else:
        with open(options.aci_repo_file, 'r') as fh:
           repotext = fh.read()
@@ -222,7 +225,7 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum -y install python3-openstack-dashboard-gbp",
                          "mkdir -p /usr/lib/heat",
-                         "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python2.7/site-packages/openstack_dashboard/local/enabled"],
+                         "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python3.6/site-packages/openstack_dashboard/local/enabled"],
             "osd_param_name": ["ContainerHorizonImage"],
 
         },
