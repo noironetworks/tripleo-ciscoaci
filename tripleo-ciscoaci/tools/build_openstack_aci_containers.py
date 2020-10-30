@@ -199,6 +199,7 @@ gpgcheck=0
        with open(options.aci_repo_file, 'r') as fh:
           repotext = fh.read()
 
+    pushurl = None
     if options.destination_registry:
         pushurl = options.destination_registry
     else:
@@ -215,9 +216,9 @@ gpgcheck=0
                  print("Unable to determine local registry")
                  sys.exit(1)
               break
-           else:
-              print("Unable to determine local registry")
-              sys.exit(1)
+    if pushurl == None:
+        print("Unable to determine local registry")
+        sys.exit(1)
 
     container_array = {
         'horizon': {
