@@ -263,6 +263,7 @@ outputs:
             - name: get apic systemid
               command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_apic_systemid
               register: asid
+
             - name: set aci_apic_systemid fact
               set_fact:
                  aci_apic_systemid: "{{ asid.stdout }}"
@@ -270,10 +271,28 @@ outputs:
             - name: get opflex uplink interface
               command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_opflex_uplink_interface
               register: oui
+            
+            - set_fact:
+                 raw_u_intf: "{{ oui.stdout }}"
+
+            - name: get mapped interface
+              command: "os-net-config -i {{ raw_u_intf }}"
+              register: intf_out
+              ignore_errors: true
+            
+            - set_fact:
+                 intf_json: "{{ intf_out.stdout | to_json }}"
+
             - name: set aci_opflex_uplink_interface fact
               set_fact:
-                 aci_opflex_uplink_interface: "{{ oui.stdout }}"
+                 aci_opflex_uplink_interface: "{{ item.value }}"
+              when: item.key is defined and item.key == raw_u_intf
+              with_dict: "{{ intf_json | from_json }}"
 
+            - set_fact:
+                 aci_opflex_uplink_interface: "{{ oui.stdout }}"
+              when: aci_opflex_uplink_interface is not defined
+       
 #            - name: bring down opflex infra vlan interface
 #              command: ifdown vlan"{{ aci_apic_infravlan }}"
 #              ignore_errors: True
