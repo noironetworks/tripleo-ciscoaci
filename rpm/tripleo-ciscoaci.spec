@@ -7,6 +7,8 @@ Group:          Applications/Utilities
 Source0:        tripleo-ciscoaci.tar.gz
 BuildArch:      noarch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Requires:       createrepo
+
 
 %define debug_package %{nil}
 
