@@ -264,7 +264,7 @@ gpgcheck=0
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-opflex",
             "packages": [],
-            "run_cmds": ["yum -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd"],
+            "run_cmds": ["yum -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd os-net-config"],
             "osd_param_name": ["ContainerOpflexAgentImage"],
             "user": 'root',
         },

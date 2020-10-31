@@ -89,6 +89,44 @@ parameters:
       Valid values are "erspan". This determines whether a given feature is supported
       by the vSwitch in the underlying distribution, and therefore can be enabled in the
       opflex-agent.
+  ACIOpflexInterfaceMTU:
+    type: number
+    default: 1600
+  ACIOpflexBridgeToPatch:
+    type: string
+    default: 'br-ex'
+    description: >
+     When opflex is used in VLAN encap mode, the interface connected to ACI fabric should
+     be part of integration bridge br-int. In some network configuration, the interface could
+     already be part of other bridge for example br-ex. Setting this value to br-ex will create
+     a patch interface between br-int and br-ex. If set to empty string, no patch will be created
+  ACIOpflexEncapMode:
+    type: string
+    default: 'vxlan'
+    constraints:
+      - allowed_values: ['vlan', 'vxlan']
+  OpflexEndpointReqTimeout:
+    default: 10
+    type: number
+  OpflexNatMtuSize:
+    default: 0
+    type: number
+  OpflexLoggingLevel:
+    default: debug2
+    type: string
+  NeutronExternalBridge:
+    type: string
+    default: 'br-ex'
+    description: >
+       Opflex depends on knowing what the external bridge name is, which by default is br-ex
+       If neutron configuration was changed to some other name, this variable needs to be set
+       to the same value.
+  ACIApicInfraSubnetGateway:
+    type: string
+    default: '10.0.0.30'
+  ACIApicInfraAnycastAddr:
+    type: string
+    default: '10.0.0.32'
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
@@ -143,12 +181,19 @@ outputs:
                 dport: 8472
               '298 opflex igmp accept':
                 proto: 'igmp'
-          - ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
-          - ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
-          - ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
-          - ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
-          - ciscoaci::opflex::opflex_disabled_features: {get_param: ACIOpflexDisabledFeatures}
-          - ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
+            ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
+            ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
+            ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
+            ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::opflex::opflex_disabled_features: {get_param: ACIOpflexDisabledFeatures}
+            ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
+            ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+            ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
+            ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}
+            ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
+            ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
+            ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+            ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
       puppet_config:
         config_volume: opflex
         puppet_tags: opflex_config
@@ -163,6 +208,7 @@ outputs:
         volumes:
           - /lib/modules:/lib/modules:ro
           - /run/openvswitch:/run/openvswitch
+          - /etc/os-net-config:/etc/os-net-config:ro
       kolla_config:
         /var/lib/kolla/config_files/ciscoaci_opflex_agent.json:
           command: /bin/supervisord -c /etc/opflex-agent-ovs/opflex_supervisord.conf
