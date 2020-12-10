@@ -75,7 +75,7 @@ parameters:
       interface should be a OVS interface.
   ACIOpflexDisabledFeatures:
     type: comma_delimited_list
-    default: "erspan"
+    default: ""
     description: >
       Valid values are "erspan". This determines whether a given feature is supported
       by the vSwitch in the underlying distribution, and therefore can be enabled in the
