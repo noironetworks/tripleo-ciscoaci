@@ -40,7 +40,7 @@ def determine_ucloud_ip():
         return uip
 
 
-def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushtag, container_name, arr, repotext):
+def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushtag, container_name, arr, repotext, license_text):
     print("Building ACI %s container" % container_name)
 
     aci_pkgs = arr['packages']
@@ -57,6 +57,17 @@ def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushta
     else:
         user = ''
 
+    if 'summary' in arr.keys():
+        summary = arr['summary']
+    else:
+        summary = ''
+
+    if 'description' in arr.keys():
+        description = arr['description']
+    else:
+        description = ''
+
+
     d_user = subprocess.check_output(
         ['podman', 'run', '--net=host', '--name', '%s-temp' % container_name, rhel_container, 'whoami'])
     def_user = d_user.decode('utf-8').strip()
@@ -69,16 +80,23 @@ def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushta
     with open(repofile, 'w') as fh:
        fh.write(repotext)
 
+    license_file = os.path.join(build_dir, 'LICENSE.txt')
+    with open(license_file, 'w') as fh:
+       fh.write(license_text)
+
     blob = """
 FROM %s
 MAINTAINER Cisco Systems
-LABEL name="%s" vendor="Cisco Systems" version="16.1" release="1"
+LABEL name="%s" vendor="Cisco Systems" version="16.1" release="1" summary="%s" \
+description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
-       """ % (rhel_container, aci_container, ucloud_ip)
+       """ % (rhel_container, aci_container, summary, description, ucloud_ip)
     blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms \n"
     blob = blob + "ADD /opt/cisco_aci_repo /opt/cisco_aci_repo \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
+    blob = blob + "RUN mkdir /licenses \n"
+    blob = blob + "Copy LICENSE.txt /licenses/ \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
     if user == '':
@@ -192,6 +210,23 @@ baseurl=file:///opt/cisco_aci_repo
 enabled=1
 gpgcheck=0
        """ 
+
+       license_text = """
+         Copyright 2020 Cisco Systems, Inc.
+  
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+""" 
        os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
        os.system("cp /opt/cisco_aci_repo/ciscoaci-puppet-* /var/lib/image-serve/v2/__acirepo")
        os.system("createrepo /var/lib/image-serve/v2/__acirepo")
@@ -228,6 +263,8 @@ gpgcheck=0
                          "mkdir -p /usr/lib/heat",
                          "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python3.6/site-packages/openstack_dashboard/local/enabled"],
             "osd_param_name": ["ContainerHorizonImage"],
+            "summary":"This is Ciscoaci modified Horizon container",
+            "description":"This will be deployed on the controller  nodes",
 
         },
         'heat': {
@@ -237,12 +274,16 @@ gpgcheck=0
                          "mkdir -p /usr/lib/heat",
                          "cp -r /usr/lib/python3.6/site-packages/gbpautomation /usr/lib/heat"],
             "osd_param_name": ["ContainerHeatEngineImage"],
+            "summary":"This is Ciscoaci modified HeatEngine container",
+            "description":"This will be deployed on the controller  nodes",
         },
         'neutron-server': {
             "rhel_container": "openstack-neutron-server",
             "packages": [],
             "run_cmds": ["yum -y install python3-apicapi python3-neutron-opflex-agent libmodelgbp python3-openstack-neutron-gbp ciscoaci-puppet python3-gbpclient python3-aci-integration-module "],
             "osd_param_name": ["ContainerNeutronApiImage", "ContainerNeutronConfigImage"],
+            "summary":"This is Ciscoaci modified Neutron API container",
+            "description":"This will be deployed on the controller  nodes",
         },
         'ciscoaci-lldp': {
             "rhel_container": "openstack-neutron-server",
@@ -250,7 +291,9 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum -y install python3-aci-integration-module python3-neutron-opflex-agent ciscoaci-puppet ethtool python3-apicapi lldpd "],
             "osd_param_name": ["ContainerCiscoLldpImage"],
-            "user": 'root',
+            "user": 'neutron',
+            "summary":"This is Ciscoaci LLDP container",
+            "description":"This will be deployed on the controller and compute nodes",
         },
         'ciscoaci-aim': {
             "rhel_container": "openstack-neutron-server",
@@ -259,7 +302,9 @@ gpgcheck=0
             "run_cmds": ["yum -y install python3-apicapi ciscoaci-puppet python3-aci-integration-module python3-neutron-opflex-agent python3-openstack-neutron-gbp python3-gbpclient ",
                          "update-crypto-policies --set LEGACY"],
             "osd_param_name": ["ContainerCiscoAciAimImage", "ContainerCiscoAciAimConfigImage"],
-            "user": 'root',
+            "user": 'neutron',
+            "summary":"This is Ciscoaci AIM container",
+            "description":"This will be deployed on the controller nodes",
         },
         'opflex-agent': {
             "rhel_container": "openstack-neutron-openvswitch-agent",
@@ -267,7 +312,9 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd os-net-config"],
             "osd_param_name": ["ContainerOpflexAgentImage"],
-            "user": 'root',
+            "user": 'neutron',
+            "summary":"This is Ciscoaci Opflex Agent container",
+            "description":"This will be deployed on the controller and compute nodes",
         },
     }
 
@@ -283,7 +330,7 @@ gpgcheck=0
 
     for container in containers_list:
         build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
-              options.tag, container, container_array[container], repotext)
+              options.tag, container, container_array[container], repotext, license_text)
 
     config_blob = "parameter_defaults:\n"
     for container in containers_list:
