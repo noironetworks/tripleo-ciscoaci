@@ -264,6 +264,7 @@ limitations under the License.
                          "mkdir -p /usr/lib/heat",
                          "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python3.6/site-packages/openstack_dashboard/local/enabled"],
             "osd_param_name": ["ContainerHorizonImage"],
+            "user": 'neutron',
             "summary":"This is Ciscoaci modified Horizon container",
             "description":"This will be deployed on the controller  nodes",
 
@@ -275,6 +276,7 @@ limitations under the License.
                          "mkdir -p /usr/lib/heat",
                          "cp -r /usr/lib/python3.6/site-packages/gbpautomation /usr/lib/heat"],
             "osd_param_name": ["ContainerHeatEngineImage"],
+            "user": 'neutron',
             "summary":"This is Ciscoaci modified HeatEngine container",
             "description":"This will be deployed on the controller  nodes",
         },
@@ -283,6 +285,7 @@ limitations under the License.
             "packages": [],
             "run_cmds": ["yum --releasever=8.2 -y install python3-apicapi python3-neutron-opflex-agent libmodelgbp python3-openstack-neutron-gbp ciscoaci-puppet python3-gbpclient python3-aci-integration-module "],
             "osd_param_name": ["ContainerNeutronApiImage", "ContainerNeutronConfigImage"],
+            "user": 'neutron',
             "summary":"This is Ciscoaci modified Neutron API container",
             "description":"This will be deployed on the controller  nodes",
         },
