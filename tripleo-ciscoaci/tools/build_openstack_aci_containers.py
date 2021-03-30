@@ -67,11 +67,11 @@ def build_containers(upstream_registry, regseparator, pushurl, pushtag, containe
     blob = """
 FROM %s
 MAINTAINER Cisco Systems
-LABEL name="rhosp13/%s" vendor="Cisco Systems" version="13.0" release="1"
+LABEL name="rhosp14/%s" vendor="Cisco Systems" version="14.0" release="1"
 USER root
        """ % (rhel_container, aci_container)
     blob = blob + "RUN yum repolist --disablerepo=* && yum-config-manager --disable \* > /dev/null \n"
-    blob = blob + "RUN yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-13-rpms rhel-7-server-rhceph-3-tools-rpms \n"
+    blob = blob + "RUN yum-config-manager  --enable rhel-7-server-rpms rhel-7-server-extras-rpms rhel-7-server-rh-common-rpms rhel-ha-for-rhel-7-server-rpms rhel-7-server-openstack-14-rpms rhel-7-server-rhceph-3-tools-rpms \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
@@ -116,11 +116,11 @@ def main():
     parser.add_argument("-c", "--container",
                       help="Containers to build, comma separated, default is all", dest='containers_tb', default='all')
     parser.add_argument("-s", "--upstream",
-                      help="Upstream registry to pull base images from, eg. registry.access.redhat.com/rhosp13, defaults to registry.access.redhat.com/rhosp13",
-                      default='registry.access.redhat.com/rhosp13',
+                      help="Upstream registry to pull base images from, eg. registry.access.redhat.com/rhosp14, defaults to registry.access.redhat.com/rhosp14",
+                      default='registry.access.redhat.com/rhosp14',
                       dest='upstream_registry')
     parser.add_argument("-d", "--destregistry",
-                      help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp13",
+                      help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp14",
                       dest='destination_registry')
     parser.add_argument("-r", "--regseparator",
                       help="Upstream registry separator for images, eg. '/' for normal upstream registrys (default). Will be added between upstream registry name and container name. Use '_' for satellite based registries.",
@@ -193,7 +193,7 @@ gpgcheck=0
 	if ucloud_ip == 1:
 	    print("Unable to determine undercloud ip. Please specify destination_registry option value.")
 	    sys.exit(1)
-        pushurl = "%s:8787/rhosp13" % ucloud_ip
+        pushurl = "%s:8787/rhosp14" % ucloud_ip
     else:
         pushurl = options.destination_registry
 
