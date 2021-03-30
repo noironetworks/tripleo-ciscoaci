@@ -45,7 +45,7 @@ def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushta
 
     aci_pkgs = arr['packages']
     docker_run_cmds = arr['run_cmds']
-    rhel_container = "%s%s%s:16.1" % (upstream_registry, regseparator,
+    rhel_container = "%s%s%s:15.1" % (upstream_registry, regseparator,
                                        arr['rhel_container'])
     if "aci_container" in arr.keys():
         aci_container = "%s/%s" %(pushurl, arr['aci_container'])
@@ -87,12 +87,12 @@ def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushta
     blob = """
 FROM %s
 MAINTAINER Cisco Systems
-LABEL name="%s" vendor="Cisco Systems" version="16.1" release="1" summary="%s" \
+LABEL name="%s" vendor="Cisco Systems" version="15.1" release="1" summary="%s" \
 description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, summary, description, ucloud_ip)
-    blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms \n"
+    blob = blob + "RUN dnf config-manager --enable openstack-15.1-for-rhel-8-x86_64-rpms \n"
     blob = blob + "ADD /opt/cisco_aci_repo /opt/cisco_aci_repo \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     blob = blob + "RUN mkdir /licenses \n"
