@@ -245,6 +245,14 @@ gpgcheck=0
             "osd_param_name": ["DockerOpflexAgentImage"],
             "user": 'root',
         },
+        'neutron-opflex-agent': {
+            "rhel_container": "openstack-neutron-openvswitch-agent",
+            "aci_container": "openstack-ciscoaci-neutron-opflex",
+            "packages": [],
+            "run_cmds": ["yum -y install ciscoaci-puppet ethtool neutron-opflex-agent apicapi openstack-neutron-gbp python2-networking-sfc"],
+            "osd_param_name": ["DockerNeutronOpflexAgentImage"],
+            "user": 'root',
+        },
     }
 
     if options.containers_tb == 'all':

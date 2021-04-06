@@ -133,11 +133,13 @@ outputs:
                   - /run/netns:/run/netns:shared
                   - /run/openvswitch:/run/openvswitch
                   - /lib/modules:/lib/modules:ro
+                  - opflex_endpoints:/var/lib/opflex-agent-ovs
+                  - opflex_socket:/run/opflex
             environment:
               - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
       metadata_settings:
         get_attr: [OpflexAgentBase, role_data, metadata_settings]
-      host_prep_tasks: 
+      host_prep_tasks:
             - name: create /run/netns with temp namespace
               command: ip netns add ns_temp
               register: ipnetns_add_result
@@ -411,35 +413,6 @@ outputs:
               when:
                 - step|int == 2
                 - remove_agent_ovs_package|bool
-
-            - name: Check if neutron_opflex_agent is deployed
-              command: systemctl is-enabled --quiet neutron-opflex-agent
-              tags: common
-              ignore_errors: True
-              register: neutron_opflex_agent_enabled
-            - name: "PreUpgrade step0,validation: Check service neutron-opflex-agent is running"
-              command: systemctl is-active --quiet neutron-opflex-agent
-              when:
-                - step|int == 0
-                - neutron_opflex_agent_enabled.rc == 0
-              tags: validation
-            - name: Stop and disable neutron_opflex_agent service
-              when:
-                - step|int == 2
-                - neutron_opflex_agent_enabled.rc == 0
-              service: name=neutron-opflex-agent state=stopped enabled=no
-
-            - name: Set fact for removal of neutron-opflex-agent package
-              when: step|int == 2
-              set_fact:
-                remove_neutron_opflex_package: {get_param: UpgradeRemoveUnusedPackages}
-            - name: Remove neutron-opflex-agent package if operator requests it
-              yum: name=neutron-opflex-agent state=removed
-              ignore_errors: True
-              when:
-                - step|int == 2
-                - remove_neutron_opflex_package|bool
-
             - name: get infra vlan
               command: hiera -c /etc/puppet/hiera.yaml ciscoaci::opflex::aci_apic_infravlan
               register: vlanout
@@ -547,26 +520,6 @@ outputs:
           when:
             - step|int == 0
             - release == 'ocata'
-        - name: Check if neutron_opflex_agent is deployed
-          command: systemctl is-enabled --quiet neutron-opflex-agent
-          ignore_errors: True
-          register: neutron_opflex_agent_enabled_result
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact neutron_opflex_agent_enabled
-          set_fact:
-            neutron_opflex_agent_enabled: "{{ neutron_opflex_agent_enabled_result.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop neutron_opflex_agent
-          service: name=neutron-opflex-agent state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - neutron_opflex_agent_enabled|bool
-
         - name: Check if agent_ovs is deployed
           command: systemctl is-enabled --quiet agent-ovs
           ignore_errors: True
@@ -626,51 +579,7 @@ outputs:
             - step|int == 1
             - release == 'ocata'
             - mcast_daemon_enabled|bool
-        - name: Check if neutron_opflex_agent is deployed
-          command: systemctl is-enabled --quiet neutron-opflex-agent
-          ignore_errors: True
-          register: neutron_opflex_agent_enabled_result
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact neutron_opflex_agent_enabled
-          set_fact:
-            neutron_opflex_agent_enabled: "{{ neutron_opflex_agent_enabled_result.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop neutron_opflex_agent
-          service: name=neutron-opflex-agent state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - neutron_opflex_agent_enabled|bool
-        - name: stop metadata agent
-          command: supervisorctl -c /var/lib/neutron/opflex_agent/metadata.conf stop metadata-agent
-          ignore_errors: True
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - neutron_opflex_agent_enabled|bool
-        - name: stop opflex state watcher
-          command: supervisorctl -c /var/lib/neutron/opflex_agent/metadata.conf stop opflex-state-watcher
-          ignore_errors: True
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - neutron_opflex_agent_enabled|bool
-        - name: stop opflex ep watcher
-          command: supervisorctl -c /var/lib/neutron/opflex_agent/metadata.conf stop opflex-ep-watcher
-          ignore_errors: True
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - neutron_opflex_agent_enabled|bool
         - name: agent ovs package update
           shell: yum -y update agent-ovs
-          when:
-            - step|int == 6
-        - name: neutron opflex agent package update
-          shell: yum -y update neutron-opflex-agent
           when:
             - step|int == 6

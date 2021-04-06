@@ -19,6 +19,9 @@
       opflex:
         rpath: /var/lib/config-data/opflex/
         lpath: opflex/config-data
+      neutron_opflex:
+        rpath: /var/lib/config-data/neutron_opflex/
+        lpath: neutron_opflex/config-data
       opflex_state:
         rpath: /tmp/opflex-agent-ovs
         lpath: opflex
@@ -28,6 +31,9 @@
       puppet_opflex:
         rpath: /var/lib/config-data/puppet-generated/opflex/
         lpath: opflex/config-data/puppet-generated
+      puppet_neutron_opflex:
+        rpath: /var/lib/config-data/puppet-generated/neutron_opflex/
+        lpath: neutron_opflex/config-data/puppet-generated  
       hiera:
         rpath: /etc/puppet/hieradata
         lpath: hieradata
