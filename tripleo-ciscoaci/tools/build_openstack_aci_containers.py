@@ -40,13 +40,15 @@ def determine_ucloud_ip():
         return uip
 
 
-def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushtag, container_name, arr, repotext, license_text):
+def build_containers(ucloud_ip, upstream_registry, regseparator,
+                     pushurl, pushtag, container_name, arr, repotext,
+                     license_text, release_tag, additional_repos):
     print("Building ACI %s container" % container_name)
 
     aci_pkgs = arr['packages']
     docker_run_cmds = arr['run_cmds']
-    rhel_container = "%s%s%s:16.1" % (upstream_registry, regseparator,
-                                       arr['rhel_container'])
+    rhel_container = "%s%s%s:%s" % (upstream_registry, regseparator,
+                                    arr['rhel_container'], release_tag)
     if "aci_container" in arr.keys():
         aci_container = "%s/%s" %(pushurl, arr['aci_container'])
     else:
@@ -75,7 +77,9 @@ def build_containers(ucloud_ip, upstream_registry, regseparator, pushurl, pushta
     subprocess.check_call(["podman", "rm", '%s-temp' % container_name])
 
     build_dir = tempfile.mkdtemp()
-    shutil.copytree('/opt/cisco_aci_repo', '%s/opt/cisco_aci_repo' % build_dir)
+    # We only need to copy the repo data over if we're using the tarball
+    if repo_tar_file:
+        shutil.copytree('/opt/cisco_aci_repo', '%s/opt/cisco_aci_repo' % build_dir)
     repofile = os.path.join(build_dir, 'aci.repo')
     with open(repofile, 'w') as fh:
        fh.write(repotext)
@@ -92,8 +96,9 @@ description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, summary, description, ucloud_ip)
-    blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms \n"
-    blob = blob + "ADD /opt/cisco_aci_repo /opt/cisco_aci_repo \n"
+    blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms %s\n" % additional_repos
+    if repo_tar_file:
+        blob = blob + "ADD /opt/cisco_aci_repo /opt/cisco_aci_repo \n"
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     blob = blob + "RUN mkdir /licenses \n"
     blob = blob + "Copy LICENSE.txt /licenses/ \n"
@@ -151,8 +156,15 @@ def main():
                       help="Upstream registry separator for images, eg. '/' for normal upstream registrys (default). Will be added between upstream registry name and container name. Use '_' for satellite based registries.",
                       default="/",
                       dest='regseparator')
+    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 16.1",
+                      default='16.1', dest='release_tag')
     parser.add_argument("-t", "--tag", help="tag for images, defaults to current timestamp",
                       default=timestamp, dest='tag')
+    parser.add_argument("-a", "--additional-repos",
+                      help="Additional repos to use when building containers (defaults to empty list). Use with 'rhel-8-for-x86_64-baseos-eus-rpms rhel-8-for-x86_64-appstream-eus-rpms' when using satellite.",
+                      nargs='*',
+                      default=[],
+                      dest='additional_repos')
     parser.add_argument("--force", help="Override check for md5sum mismatch",
 	              dest='force', action='store_true')
 
@@ -211,22 +223,6 @@ enabled=1
 gpgcheck=0
        """ 
 
-       license_text = """
-         Copyright 2020 Cisco Systems, Inc.
-  
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-""" 
        os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
        os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
        os.system("cp /opt/cisco_aci_repo/ciscoaci-puppet-* /var/lib/image-serve/v2/__acirepo")
@@ -319,6 +315,22 @@ limitations under the License.
         },
     }
 
+    license_text = """
+         Copyright 2020 Cisco Systems, Inc.
+  
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+""" 
     if options.containers_tb == 'all':
         containers_list = container_array.keys()
     else:
@@ -329,9 +341,13 @@ limitations under the License.
             else:
                 print("Unknown container name %s, skipping" % co)
 
+    additional_repos = ''
+    for repo in options.additional_repos:
+        additional_repos += "--enable %s " % repo
     for container in containers_list:
         build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
-              options.tag, container, container_array[container], repotext, license_text)
+              options.tag, container, container_array[container], repotext, license_text,
+              options.release_tag, additional_repos, repo_tar_file)
 
     config_blob = "parameter_defaults:\n"
     for container in containers_list:
