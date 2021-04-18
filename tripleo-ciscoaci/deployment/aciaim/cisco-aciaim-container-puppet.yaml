@@ -4,6 +4,10 @@ description: >
   OpenStack containerized Cisco ACI AIM service
 
 parameters:
+  ContainerCiscoAciAimImageStein:
+    description: image
+    type: string
+    default: ''
   ContainerCiscoAciAimImage:
     description: image
     type: string
@@ -356,28 +360,54 @@ outputs:
 #              list_concat:
 #                - {get_attr: [ContainersCommon, container_puppet_apply_volumes]}
         step_3:
-          aim_db_migrate:
-            start_order: 5
-            image: &ciscoaci_aim_image {get_param: ContainerCiscoAciAimImage}
-            net: host
-            privileged: false
-            detach: false
-            user: root
-            volumes:
-              list_concat:
-                - {get_attr: [ContainersCommon, volumes]}
-                -
-                  - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
-                  - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
-                  - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
-            command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci', 
-                      '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
-                      '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&', 
-                      '/usr/bin/aimctl', 'config', 'update', '&&', 
-                      '/usr/bin/aimctl', 'infra', 'create', '&&', 
-                      '/usr/bin/aimctl', 'manager', 'load-domains']
-            environment:
-              TRIPLEO_DEPLOY_IDENTIFIER: {get_param: DeployIdentifier}
+          map_merge:
+            - aim_db_migrate:
+                start_order: 5
+                image: &ciscoaci_aim_image {get_param: ContainerCiscoAciAimImage}
+                net: host
+                privileged: false
+                detach: false
+                user: root
+                volumes:
+                  list_concat:
+                    - {get_attr: [ContainersCommon, volumes]}
+                    -
+                      - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
+                      - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
+                      - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
+                command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci', 
+                          '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
+                          '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&', 
+                          '/usr/bin/aimctl', 'config', 'update', '&&', 
+                          '/usr/bin/aimctl', 'infra', 'create', '&&', 
+                          '/usr/bin/aimctl', 'manager', 'load-domains']
+                environment:
+                  TRIPLEO_DEPLOY_IDENTIFIER: {get_param: DeployIdentifier}
+            - if:
+                - fast_forward_upgrade
+                - aim_db_migrate_stein:
+                    start_order: 0
+                    image: &ciscoaci_aim_image_stein {get_param: ContainerCiscoAciAimImageStein}
+                    net: host
+                    privileged: false
+                    detach: false
+                    user: root
+                    volumes:
+                      list_concat:
+                        - {get_attr: [ContainersCommon, volumes]}
+                        -
+                          - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
+                          - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
+                          - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
+                    command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci',
+                              '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
+                              '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&',
+                              '/usr/bin/aimctl', 'config', 'update', '&&',
+                              '/usr/bin/aimctl', 'infra', 'create', '&&',
+                              '/usr/bin/aimctl', 'manager', 'load-domains']
+                    environment:
+                      TRIPLEO_DEPLOY_IDENTIFIER: {get_param: DeployIdentifier}
+                - {}
         step_4:
           ciscoaci_aim:
             start_order: 11
