@@ -237,6 +237,9 @@ parameters:
     type: string
     default: "225.1.2.3"
 
+conditions:
+  fast_forward_upgrade: {not: {equals: [{get_param: ContainerCiscoAciAimImageStein},'']}}
+
 resources:
 
   ContainersCommon:
@@ -454,144 +457,18 @@ outputs:
             state: directory
       metadata_settings:
         get_attr: [NeutronMl2Base, role_data, metadata_settings]
-      upgrade_tasks:
-        - name: Check if aim-aid is deployed
-          command: systemctl is-enabled --quiet aim-aid
-          tags: common
-          ignore_errors: True
-          register: aim_aid_enabled
-        - name: "PreUpgrade step0,validation: Check service aim-aid is running"
-          command: systemctl is-active --quiet aim-aid
-          when:
-            - step|int == 0
-            - aim_aid_enabled.rc == 0
-          tags: validation
-        - name: Stop and disable aim-aid service
-          when:
-            - step|int == 2
-            - aim_aid_enabled.rc == 0
-          service: name=aim-aid state=stopped enabled=no
-
-        - name: Check if aim-event-service-polling is deployed
-          command: systemctl is-enabled --quiet aim-event-service-polling
-          tags: common
-          ignore_errors: True
-          register: aim_event_service_polling_enabled
-        - name: "PreUpgrade step0,validation: Check service aim-event-service-polling is running"
-          command: systemctl is-active --quiet aim-event-service-polling
-          when:
-            - step|int == 0
-            - aim_event_service_polling_enabled.rc == 0
-          tags: validation
-        - name: Stop and disable aim-event-service-polling service
-          when:
-            - step|int == 2
-            - aim_event_service_polling_enabled.rc == 0
-          service: name=aim-event-service-polling state=stopped enabled=no
-
-        - name: Check if aim-event-service-rpc is deployed
-          command: systemctl is-enabled --quiet aim-event-service-rpc
-          tags: common
-          ignore_errors: True
-          register: aim_event_service_rpc_enabled
-        - name: "PreUpgrade step0,validation: Check service aim-event-service-rpc is running"
-          command: systemctl is-active --quiet aim-event-service-rpc
-          when:
-            - step|int == 0
-            - aim_event_service_rpc_enabled.rc == 0
-          tags: validation
-        - name: Stop and disable aim-event-service-rpc service
-          when:
-            - step|int == 2
-            - aim_event_service_rpc_enabled.rc == 0
-          service: name=aim-event-service-rpc state=stopped enabled=no
-
-        - name: Set fact for removal of aci-integration-module package
-          when: step|int == 2
-          set_fact:
-            remove_aci_integration_module: {get_param: UpgradeRemoveUnusedPackages}
-        - name: Remove aci_integration_module package if operator requests it
-          yum: name=aci-integration-module state=removed
-          ignore_errors: True
-          when:
-            - step|int == 2
-            - remove_aci_integration_module|bool
-      fast_forward_upgrade_tasks:
-        - name: Remove neutron-ml2-driver-apic package
-          yum: name=neutron-ml2-driver-apic state=removed
-          ignore_errors: True
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Check if aim is deployed
-          command: systemctl is-enabled --quiet aim-aid
-          ignore_errors: True
-          register: aim_aid_enabled_result
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact aim_aid_enabled
-          set_fact:
-            aim_aid_enabled: "{{ aim_aid_enabled_result.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop aim-aid
-          service: name=aim-aid state=stopped enabled=no
-          when:
+      external_upgrade_tasks:
+        - when:
             - step|int == 1
-            - release == 'ocata'
-            - aim_aid_enabled|bool
-        - name: Stop aim-event-service-polling
-          service: name=aim-event-service-polling state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - aim_aid_enabled|bool
-        - name: Stop aim-event-service-rpc
-          service: name=aim-event-service-rpc state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - aim_aid_enabled|bool
-
-        - name: Neutron package update
-          shell: yum -y update openstack-neutron*
-          when:
-            - step|int == 7
-            - is_bootstrap_node|bool
-        - name: Neutron package update workaround
-          yum: name=python-networking-odl state=latest
-          when:
-            - step|int == 6
-            - is_bootstrap_node|bool
-        - name: Neutron db sync
-          command: neutron-db-manage upgrade head
-          when:
-            - step|int == 8
-            - is_bootstrap_node|bool
-
-        - name: GBP package update
-          shell: yum -y update openstack-neutron-gbp
-          when:
-            - step|int == 6
-            - is_bootstrap_node|bool
-        - name: AIM package update
-          shell: yum -y update aci-integration-module apicapi
-          when:
-            - step|int == 6
-            - is_bootstrap_node|bool
-        - name: ciscoaci puppet package update
-          shell: yum -y update ciscoaci-puppet
-          when:
-            - step|int == 6
-        - name: gbp db upgrade
-          command: /bin/gbp-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head
-          when:
-            - step|int == 8
-            - is_bootstrap_node|bool
-        #- name: Aim db sync
-        #  command: /usr/bin/aimctl db-migration upgrade head
-        #  when:
-        #    - step|int == 8
-        #    - is_bootstrap_node|bool
+          tags:
+            - never
+            - system_upgrade_transfer_data
+            - system_upgrade_stop_services
+          block:
+            - name: Stop aim container
+              import_role:
+                name: tripleo-container-stop
+              vars:
+                tripleo_containers_to_stop:
+                  - ciscoaci_aim
+                tripleo_delegate_to: "{{ groups['neutron_api'] | default([]) }}"

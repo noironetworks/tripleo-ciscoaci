@@ -95,142 +95,18 @@ outputs:
               file:
                 path: /var/log/containers/neutron
                 state: directory
-      upgrade_tasks:
-            - name: Check if neutron-cisco-apic-host-agent is deployed
-              command: systemctl is-enabled --quiet neutron-cisco-apic-host-agent
-              tags: common
-              ignore_errors: True
-              register: neutron_cisco_apic_host_agent_enabled
-            - name: "PreUpgrade step0,validation: Check service neutron-cisco-apic-host-agent is running"
-              command: systemctl is-active --quiet neutron-cisco-apic-host-agent
-              when:
-                - step|int == 0
-                - neutron_cisco_apic_host_agent_enabled.rc == 0
-              tags: validation
-            - name: Stop and disable neutron-cisco-apic-host-agent service
-              when:
-                - step|int == 2
-                - neutron_cisco_apic_host_agent_enabled.rc == 0
-              service: name=neutron-cisco-apic-host-agent state=stopped enabled=no
-
-            - name: Check if neutron-cisco-apic-service-agent is deployed
-              command: systemctl is-enabled --quiet neutron-cisco-apic-service-agent
-              tags: common
-              ignore_errors: True
-              register: neutron_cisco_apic_service_agent_enabled
-            - name: "PreUpgrade step0,validation: Check service neutron-cisco-apic-service-agent is running"
-              command: systemctl is-active --quiet neutron-cisco-apic-service-agent
-              when:
-                - step|int == 0
-                - neutron_cisco_apic_service_agent_enabled.rc == 0
-              tags: validation
-            - name: Stop and disable neutron-cisco-apic-service-agent service
-              when:
-                - step|int == 2
-                - neutron_cisco_apic_service_agent_enabled.rc == 0
-              service: name=neutron-cisco-apic-service-agent state=stopped enabled=no
-
-            - name: Check if lldpd is deployed
-              command: systemctl is-enabled --quiet lldpd
-              tags: common
-              ignore_errors: True
-              register: lldpd_enabled
-            - name: "PreUpgrade step0,validation: Check service lldpd is running"
-              command: systemctl is-active --quiet lldpd
-              when:
-                - step|int == 0
-                - lldpd_enabled.rc == 0
-              tags: validation
-            - name: Stop and disable lldpd service
-              when:
-                - step|int == 2
-                - lldpd_enabled.rc == 0
-              service: name=lldpd state=stopped enabled=no
-
-            - name: Set fact for removal of neutron-opflex-agent package
-              when: step|int == 2
-              set_fact:
-                remove_neutron_opflex_agent: {get_param: UpgradeRemoveUnusedPackages}
-            - name: Remove neutron-opflex-agent package if operator requests it
-              yum: name=neutron-opflex-agent state=removed
-              ignore_errors: True
-              when:
-                - step|int == 2
-                - remove_neutron_opflex_agent|bool
-            - name: Set fact for removal of lldpd package
-              when: step|int == 2
-              set_fact:
-                remove_lldp_package: {get_param: UpgradeRemoveUnusedPackages}
-            - name: Remove lldp package if operator requests it
-              yum: name=lldpd state=removed
-              ignore_errors: True
-              when:
-                - step|int == 2
-                - remove_neutron_opflex_agent|bool
-      update_tasks:
-      fast_forward_upgrade_tasks:
-        - name: Remove neutron-ml2-driver-apic package
-          yum: name=neutron-ml2-driver-apic state=removed
-          ignore_errors: True
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Check if neutron-cisco-apic-host-agent is deployed
-          command: systemctl is-enabled --quiet neutron-cisco-apic-host-agent
-          ignore_errors: True
-          register: neutron_cisco_apic_host_agent_enabled_result
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact neutron_cisco_apic_host_agent_enabled
-          set_fact:
-            neutron_cisco_apic_host_agent_enabled: "{{ neutron_cisco_apic_host_agent_enabled_result.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop neutron_cisco_apic_host_agent
-          service: name=neutron-cisco-apic-host-agent state=stopped enabled=no
-          when:
+      external_upgrade_tasks:
+        - when:
             - step|int == 1
-            - release == 'ocata'
-            - neutron_cisco_apic_host_agent_enabled|bool
-
-        - name: Check if neutron-cisco-apic-service-agent is deployed
-          command: systemctl is-enabled --quiet neutron-cisco-apic-service-agent
-          ignore_errors: True
-          register: neutron_cisco_apic_service_agent_enabled_result
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact neutron_cisco_apic_service_agent_enabled
-          set_fact:
-            neutron_cisco_apic_service_agent_enabled: "{{ neutron_cisco_apic_service_agent_enabled_result.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop neutron_cisco_apic_service_agent
-          service: name=neutron-cisco-apic-service-agent state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - neutron_cisco_apic_service_agent_enabled|bool
-
-        - name: Check if lldpd deployed
-          command: systemctl is-enabled --quiet lldpd
-          ignore_errors: True
-          register: lldpd_enabled
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact lldpd_enabled
-          set_fact:
-            lldpd_enabled: "{{ lldpd_enabled.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop lldpd
-          service: name=lldpd state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - lldpd_enabled|bool
+          tags:
+            - never
+            - system_upgrade_transfer_data
+            - system_upgrade_stop_services
+          block:
+            - name: Stop lldp container
+              import_role:
+                name: tripleo-container-stop
+              vars:
+                tripleo_containers_to_stop:
+                  - ciscoaci_lldp_agent
+                tripleo_delegate_to: "{{ groups['neutron_api'] | default([]) }}"

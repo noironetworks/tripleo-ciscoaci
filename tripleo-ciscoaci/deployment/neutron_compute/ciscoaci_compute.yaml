@@ -167,3 +167,14 @@ outputs:
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute
+      external_upgrade_tasks:
+        - when:
+            - step|int == 1
+          tags:
+            - never
+            - system_upgrade_transfer_data
+            - system_upgrade_stop_services
+          block:
+            - name: Dummy2
+              vars:
+                tripleo_delegate_to: "{{ groups['neutron_api'] | default([]) }}"
