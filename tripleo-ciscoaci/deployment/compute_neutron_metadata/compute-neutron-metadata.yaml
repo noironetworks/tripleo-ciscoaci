@@ -209,53 +209,18 @@ outputs:
                 name: virt_sandbox_use_netlink
                 persistent: yes
                 state: yes
-      upgrade_tasks: []
-      fast_forward_upgrade_tasks:
+      external_upgrade_tasks:
         - when:
-            - step|int == 0
-            - release == 'rocky'
-          block:
-            - name: Check if neutron_metadata_agent is deployed
-              command: systemctl is-enabled --quiet neutron-metadata-agent
-              failed_when: false
-              register: neutron_metadata_agent_enabled_result
-            - name: Set fact neutron_metadata_agent_enabled
-              set_fact:
-                neutron_metadata_agent_enabled: "{{ neutron_metadata_agent_enabled_result.rc == 0 }}"
-        - name: Stop neutron_metadata_agent
-          service: name=neutron-metadata-agent state=stopped enabled=no
-          when:
             - step|int == 1
-            - release == 'rocky'
-            - neutron_metadata_agent_enabled|bool
-      post_upgrade_tasks:
-        - name: Check for neutron user
-          getent:
-            database: passwd
-            key: neutron
-            fail_key: false
-        - name: Set neutron_user_avail
-          set_fact:
-            neutron_user_avail: "{{ getent_passwd is defined }}"
-        - when:
-            - step|int == 2
-            - neutron_user_avail|bool
+          tags:
+            - never
+            - system_upgrade_transfer_data
+            - system_upgrade_stop_services
           block:
-            - name: Ensure r/w access for existing files after upgrade
-              become: true
-              shell: |
-                umask 0002
-                setfacl -d -R -m u:neutron:rwx /var/lib/neutron
-                setfacl -R -m u:neutron:rw /var/lib/neutron
-                find /var/lib/neutron -type d -exec setfacl -m u:neutron:rwx '{}' \;
-            - name: Provide access to domain sockets
-              become: true
-              shell: |
-                umask 0002
-                setfacl -m u:neutron:rwx "{{ item }}"
-              with_items:
-                - /var/lib/neutron/metadata_proxy
-                - /var/lib/neutron/keepalived-state-change
-                - /var/lib/neutron
-              # These files are not necessarily present
-              failed_when: false
+            - name: Stop metadata container
+              import_role:
+                name: tripleo-container-stop
+              vars:
+                tripleo_containers_to_stop:
+                  - neutron_metadata_agent
+                tripleo_delegate_to: "{{ groups['neutron_api'] | default([]) }}"

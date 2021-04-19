@@ -276,3 +276,14 @@ outputs:
         include tripleo::profile::base::ciscoaci_ml2
       metadata_settings:
         get_attr: [NeutronMl2Base, role_data, metadata_settings]
+      external_upgrade_tasks:
+        - when:
+            - step|int == 1
+          tags:
+            - never
+            - system_upgrade_transfer_data
+            - system_upgrade_stop_services
+          block:
+            - name: Dummy
+              vars:
+                tripleo_delegate_to: "{{ groups['neutron_api'] | default([]) }}"
