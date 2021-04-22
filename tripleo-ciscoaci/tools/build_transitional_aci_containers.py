@@ -227,10 +227,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """ 
-       os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
-       os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
-       os.system("cp /opt/cisco_aci_repo/ciscoaci-puppet-* /var/lib/image-serve/v2/__acirepo")
-       os.system("createrepo /var/lib/image-serve/v2/__acirepo")
     else:
        with open(options.aci_repo_file, 'r') as fh:
           repotext = fh.read()
