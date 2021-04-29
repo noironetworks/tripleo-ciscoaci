@@ -340,7 +340,10 @@ outputs:
               preserve_properties: true
           permissions:
             - path: /var/log/aim
-              owner: root:root
+              owner: neutron:neutron
+              recurse: true
+            - path: /run/aid
+              owner: neutron:neutron
               recurse: true
       container_config_scripts: {get_attr: [ContainersCommon, container_config_scripts]}
       docker_config:
@@ -421,6 +424,7 @@ outputs:
             restart: always
             healthcheck:
               test: /etc/aim/aim_healthcheck
+            user: neutron
             volumes:
               list_concat:
                 - {get_attr: [ContainersCommon, volumes]}
@@ -451,7 +455,7 @@ outputs:
         #    environment:
         #      KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
       host_prep_tasks: 
-        - name: create persistent logs directory for cisco aci aim
+        - name: create persistent directories
           file:
             path: /var/log/containers/aim
             state: directory
