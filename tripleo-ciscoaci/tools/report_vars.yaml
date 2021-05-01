@@ -1,5 +1,5 @@
 ---
-    docker_cmds:
+    podman_cmds:
       lldpctl:
         container:  ciscoaci_lldp_agent
         cmd: lldpctl
@@ -118,11 +118,11 @@
         cmd: systemctl -l --no-pager status 
         ofile: system/systemctl-status
       containerlist:
-        cmd: docker ps
+        cmd: podman ps
         ofile: containers/docker-ps
       dockerimages:
-        cmd: docker images
-        ofile: containers/docker-images
+        cmd: podman images
+        ofile: containers/podman-images
       iplink:
         cmd: ip link
         ofile: network/ip-link

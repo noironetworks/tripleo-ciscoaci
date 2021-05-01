@@ -134,11 +134,12 @@
 
     - set_fact:
         mydir: "{{ thisdir.path }}"
-    
+
     - name: create subdirs
       file: 
         state: directory
         path: "{{ mydir }}/{{ item }}"
+        recurse: yes
       with_items:
         - system
         - ovs
@@ -150,25 +151,24 @@
         - hieradata
         - network
       delegate_to: localhost
-      recurse: yes
-   
-    - name: docker cmds
-      shell: "docker exec -i {{ item.value.container }} {{ item.value.cmd }}"
-      register: docker_output
+
+    - name: podman cmds
+      shell: "podman exec -i {{ item.value.container }} {{ item.value.cmd }}"
+      register: podman_output
       ignore_errors: true
       become: true
-      with_dict: "{{ docker_cmds }}"
+      with_dict: "{{ podman_cmds }}"
 
-    - name: save docker cmds output
+    - name: save podman cmds output
       copy:
         content: "{{ item.stdout }}"
         dest: "{{ mydir }}/{{ item.item.value.ofile }}"
-      with_items: "{{ hostvars[inventory_hostname].docker_output.results }}"
+      with_items: "{{ hostvars[inventory_hostname].podman_output.results }}"
       delegate_to: localhost
       no_log: True
 
-    - name: docker copy
-      shell: "docker cp ciscoaci_opflex_agent:/var/lib/opflex-agent-ovs /tmp"
+    - name: podman copy
+      shell: "podman cp ciscoaci_opflex_agent:/var/lib/opflex-agent-ovs /tmp"
       become: true
    
     - name: exec commands
@@ -192,6 +192,7 @@
         src: "{{ item.value.rpath }}"
         dest: "{{ mydir }}/{{ item.value.lpath }}"
       become: true
+      become_user: stack
       with_dict: "{{ rsync_dirs }}"
       delegate_to: localhost
       remote_user: heat-admin
@@ -203,6 +204,7 @@
         src: "{{ item.value.rpath }}"
         dest: "{{ mydir }}/{{ item.value.lpath }}"
       become: true
+      become_user: stack
       with_dict: "{{ rsync_controller_dirs }}"
       delegate_to: localhost
       remote_user: heat-admin
