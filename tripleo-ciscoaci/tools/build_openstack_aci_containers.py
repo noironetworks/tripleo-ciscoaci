@@ -347,7 +347,7 @@ limitations under the License.
     for container in containers_list:
         build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
               options.tag, container, container_array[container], repotext, license_text,
-              options.release_tag, additional_repos, repo_tar_file)
+              options.release_tag, additional_repos, options.repo_tar_file)
 
     config_blob = "parameter_defaults:\n"
     for container in containers_list:
