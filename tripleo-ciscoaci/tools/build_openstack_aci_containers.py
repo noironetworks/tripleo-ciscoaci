@@ -42,7 +42,7 @@ def determine_ucloud_ip():
 
 def build_containers(ucloud_ip, upstream_registry, regseparator,
                      pushurl, pushtag, container_name, arr, repotext,
-                     license_text, release_tag, additional_repos):
+                     license_text, release_tag, additional_repos, repo_tar_file):
     print("Building ACI %s container" % container_name)
 
     aci_pkgs = arr['packages']
