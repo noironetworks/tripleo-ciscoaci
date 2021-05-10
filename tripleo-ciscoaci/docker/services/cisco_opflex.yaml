@@ -497,6 +497,89 @@ outputs:
               when:
                 - step|int == 2
 
+      post_upgrade_tasks:
+        # This was moved to post_upgrade_tasks in order to ensure that
+        # an opflex-agent is running throughout the entire FFU. If it's
+        # not, then the fabric will time out the state, and stop forwarding
+        # traffic for this host.
+        - name: Check if systemd opflex_agent is deployed
+          command: systemctl is-enabled --quiet opflex-agent
+          ignore_errors: True
+          register: opflex_agent_enabled_result
+
+        - name: Set fact opflex_agent_enabled
+          set_fact:
+            opflex_agent_enabled: "{{ opflex_agent_enabled_result.rc == 0 }}"
+
+        - name: Stop opflex_agent
+          service: name=opflex-agent state=stopped enabled=no
+          when:
+            - opflex_agent_enabled|bool
+
+        # As part of an FFU from OSP10, the previous ML2 configuration
+        # file gets deleted, but also backed up as an rpmsave file. This
+        # configuration should be copied over to the containerized config
+        # file locations, but only if there's not already a valid one
+        # present (i.e. valid if file is present and size is non-zero).
+        - name: Get info about existing ML2 configuration file
+          become: True
+          stat:
+            path: /var/lib/config-data/neutron/etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini
+          register: cfg
+
+        - name: Set fact empty ML2 configuration file
+          set_fact:
+            empty_ml2_cfg: "{{ cfg.stat.exists is defined and cfg.stat.exists == True and cfg.stat.size == 0 }}"
+
+        - name: Get info about existing ML2 configuration file (puppet)
+          become: True
+          stat:
+            path: /var/lib/config-data/puppet-generated/neutron/etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini
+          register: pcfg
+
+        - name: Set fact empty ML2 configuration file (puppet)
+          set_fact:
+            empty_ml2_pcfg: "{{ pcfg.stat.exists is defined and pcfg.stat.exists == True and pcfg.stat.size == 0 }}"
+
+        - name: Check for backup copy of newton ML2 configuration file
+          become: True
+          stat:
+            path: /etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini.rpmsave
+          register: ml2cfg
+
+        - name: Set fact backup copy of newton ML2 configuration file
+          set_fact:
+            old_ml2_cfg: "{{ ml2cfg.stat.exists is defined and ml2cfg.stat.exists == True }}"
+
+        - name: Copy over backup ML2 configuration file if needed
+          become: True
+          copy:
+            src: /etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini.rpmsave
+            dest: /var/lib/config-data/neutron/etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini
+            remote_src: yes
+          when: empty_ml2_cfg and empty_ml2_pcfg and old_ml2_cfg|bool
+
+        - name: Copy over backup ML2 configuration file if needed (puppet)
+          become: True
+          copy:
+            src: /etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini.rpmsave
+            dest: /var/lib/config-data/puppet-generated/neutron/etc/neutron/plugins/ml2/ml2_conf_cisco_apic.ini
+            remote_src: yes
+          when: empty_ml2_cfg and empty_ml2_pcfg and old_ml2_cfg|bool
+
+        # Ideally we would have used roles to qualify restarting neutron_api,
+        # but this is good enough.
+        - name: Check if neutron_api container is running
+          shell: docker ps | awk '/neutron_api/{print $NF}'
+          register: dout
+          become: True
+
+        - name: Restart neutron_api container to use new config
+          command: docker restart neutron_api
+          become: True
+          ignore_errors: True
+          when: dout.stdout.find("neutron_api") != -1
+
       update_tasks:
         # puppetlabs-firewall manages security rules via Puppet but make the rules
         # consistent by default. Since Neutron also creates some rules, we don't
@@ -539,26 +622,6 @@ outputs:
             - step|int == 1
             - release == 'ocata'
             - agent_ovs_enabled|bool
-
-        - name: Check if opflex_agent is deployed
-          command: systemctl is-enabled --quiet opflex-agent
-          ignore_errors: True
-          register: opflex_agent_enabled_result
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Set fact opflex_agent_enabled
-          set_fact:
-            opflex_agent_enabled: "{{ opflex_agent_enabled_result.rc == 0 }}"
-          when:
-            - step|int == 0
-            - release == 'ocata'
-        - name: Stop opflex_agent
-          service: name=opflex-agent state=stopped enabled=no
-          when:
-            - step|int == 1
-            - release == 'ocata'
-            - opflex_agent_enabled|bool
 
         - name: Check if mcast_daemon is deployed
           command: systemctl is-enabled --quiet mcast-daemon
