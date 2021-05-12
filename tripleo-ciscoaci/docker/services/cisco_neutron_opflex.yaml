@@ -128,6 +128,9 @@ outputs:
                   - /var/lib/config-data/puppet-generated/neutron/etc/neutron/metadata_agent.ini:/etc/neutron/metadata_agent.ini:ro
                   - /var/lib/neutron:/var/lib/neutron
                   - /var/log/containers/neutron:/var/log/neutron
+                  - /var/run/openvswitch/:/var/run/openvswitch/
+                  - /run/netns:/run/netns:shared
+                  - /run/openvswitch:/run/openvswitch
                   - /lib/modules:/lib/modules:ro
                   - opflex_endpoints:/var/lib/opflex-agent-ovs
                   - opflex_socket:/run/opflex
@@ -135,7 +138,16 @@ outputs:
               - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
       metadata_settings:
         get_attr: [NeutronOpflexAgentBase, role_data, metadata_settings]
-      host_prep_tasks: []
+      host_prep_tasks:
+            - name: create /run/netns with temp namespace
+              command: ip netns add ns_temp2
+              register: ipnetns_add_result
+              ignore_errors: True
+            - name: remove temp namespace
+              command: ip netns delete ns_temp2
+              ignore_errors: True
+              when: ipnetns_add_result.rc == 0
+
       upgrade_tasks:
         list_concat:
           - get_attr: [NeutronOpflexAgentBase, role_data, ovs_upgrade_tasks]
