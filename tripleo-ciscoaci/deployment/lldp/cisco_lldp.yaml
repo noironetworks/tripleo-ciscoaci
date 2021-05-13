@@ -75,6 +75,7 @@ outputs:
             image: {get_param: ContainerCiscoLldpImage}
             net: host
             pid: host
+            user: root
             privileged: true
             restart: always
             healthcheck:
@@ -91,7 +92,7 @@ outputs:
               KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
       metadata_settings:
       host_prep_tasks: 
-            - name: create persistent logs directory for cisco opflex agent
+            - name: create persistent directories
               file:
                 path: /var/log/containers/neutron
                 state: directory
