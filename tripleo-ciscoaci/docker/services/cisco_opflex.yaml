@@ -242,6 +242,7 @@ outputs:
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
                 content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nHOTPLUG=no \nMTU={{ opflex_interface_mtu }}"
+              register: infra_interface
               when:
                 - opflex_interface_type == "ovs"
           
@@ -249,6 +250,7 @@ outputs:
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
                 content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes \nMTU={{ opflex_interface_mtu }}"
+              register: infra_interface
               when:
                 - opflex_interface_type == "linux"
           
@@ -265,12 +267,15 @@ outputs:
               copy:
                 dest: "/etc/dhcp/dhclient-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}.conf"
                 content: "send dhcp-client-identifier 01:{{ mac_addr.stdout }};"
+              register: infra_dhcp_file
 
             - name: bring down infra interface
               command: "/sbin/ifdown {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }} "
+              when: infra_dhcp_file is changed or infra_interface is changed
 
             - name: bring up infra interface
               command: "/sbin/ifup {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
+              when: infra_dhcp_file is changed or infra_interface is changed
 
             - name: setup br-fabric bridge
               command: "/bin/ovs-vsctl -- --may-exist add-br br-fabric"
@@ -462,6 +467,7 @@ outputs:
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
                 content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nDEVICETYPE=ovs \nTYPE=OVSIntPort \nOVS_BRIDGE=br-ex \nOVS_OPTIONS=\"tag={{ aci_apic_infravlan }}\" \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nHOTPLUG=no \nMTU={{ opflex_interface_mtu }}"
+              register: infra_interface
               when:
                 - opflex_interface_type == "ovs"
           
@@ -469,6 +475,7 @@ outputs:
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
                 content: "DEVICE={{ aci_opflex_uplink_interface}}.{{ aci_apic_infravlan }} \nONBOOT=yes \nNM_CONTROLLED=no \nBOOTPROTO=dhcp \nVLAN=yes \nPEERDNS=no \nPERSISTENT_DHCLIENT=1 \nDHCPRELEASE=1 \nONPARENT=yes \n MTU={{ opflex_interface_mtu }}"
+              register: infra_interface
               when:
                 - opflex_interface_type == "linux"
           
@@ -485,17 +492,16 @@ outputs:
               copy:
                 dest: "/etc/dhcp/dhclient-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}.conf"
                 content: "send dhcp-client-identifier 01:{{ mac_addr.stdout }};"
+              register: infra_dhcp_file
 
             - name: bring down infra interface
               command: "/sbin/ifdown {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }} "
               ignore_errors: True
-              when:
-                - step|int == 2
+              when: step|int == 2 and (infra_dhcp_file is changed or infra_interface is changed)
 
             - name: bring up infra interface
               command: "/sbin/ifup {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-              when:
-                - step|int == 2
+              when: step|int == 2 and (infra_dhcp_file is changed or infra_interface is changed)
 
       post_upgrade_tasks:
         # This was moved to post_upgrade_tasks in order to ensure that
