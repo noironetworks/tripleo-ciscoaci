@@ -313,6 +313,14 @@ gpgcheck=0
             "summary":"This is Ciscoaci Opflex Agent container",
             "description":"This will be deployed on the controller and compute nodes",
         },
+        'neutron-opflex-agent': {
+            "rhel_container": "openstack-neutron-openvswitch-agent",
+            "aci_container": "openstack-ciscoaci-neutron-opflex",
+            "packages": [],
+            "run_cmds": ["yum --releasever=8.2 -y install ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp"],
+            "osd_param_name": ["ContainerNeutronOpflexAgentImage"],
+            "user": 'root',
+        },
     }
 
     license_text = """
