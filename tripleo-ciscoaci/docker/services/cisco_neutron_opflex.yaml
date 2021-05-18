@@ -132,8 +132,8 @@ outputs:
                   - /run/netns:/run/netns:shared
                   - /run/openvswitch:/run/openvswitch
                   - /lib/modules:/lib/modules:ro
-                  - opflex_endpoints:/var/lib/opflex-agent-ovs
-                  - opflex_socket:/run/opflex
+                  - /var/lib/opflex/files:/var/lib/opflex-agent-ovs
+                  - /var/lib/opflex/sockets:/run/opflex
             environment:
               - KOLLA_CONFIG_STRATEGY=COPY_ALWAYS
       metadata_settings:
@@ -147,6 +147,28 @@ outputs:
               command: ip netns delete ns_temp2
               ignore_errors: True
               when: ipnetns_add_result.rc == 0
+            - name: Check for opflex persistent directory structure
+              stat:
+                path: /var/lib/opflex
+              register: opflex_path
+
+            - block:
+              - name: create persistent directories
+                file:
+                  path: "{{ item.path }}"
+                  state: directory
+                  setype: "{{ item.setype }}"
+                  mode: "{{ item.mode|default(omit) }}"
+                with_items:
+                  - { 'path': /var/lib/opflex/files/endpoints, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/services, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/ids, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/mcast, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/droplog, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/faults, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/sockets, 'setype': svirt_sandbox_file_t }
+              when:
+                - not opflex_path.stat.exists
 
       upgrade_tasks:
         list_concat:
