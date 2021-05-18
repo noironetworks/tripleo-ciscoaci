@@ -7,13 +7,6 @@ parameters:
   ContainerOpflexAgentImage:
     description: image
     type: string
-  ContainerNeutronConfigImage:
-    description: The container image to use for the neutron config_volume
-    type: string
-  DockerOpenvswitchUlimit:
-    default: ['nofile=1024']
-    description: ulimit for Openvswitch Container
-    type: comma_delimited_list
   ServiceData:
     default: {}
     description: Dictionary packing service data
@@ -44,16 +37,6 @@ parameters:
     default: false
     description: Remove package if the service is being disabled during upgrade
     type: boolean
-  NeutronBridgeMappings:
-    description: >
-      The OVS logical->physical bridge mappings to use. See the Neutron
-      documentation for details. Defaults to mapping br-ex - the external
-      bridge on hosts - to a physical name 'datacentre' which can be used
-      to create provider networks (and we use this for the default floating
-      network) - if changing this either use different post-install network
-      scripts or be sure to keep 'datacentre' as a mapping network name.
-    type: comma_delimited_list
-    default: "datacentre:br-ex"
   ACIOpflexUplinkInterface:
     type: string
     default: 'nic1'
@@ -67,14 +50,6 @@ parameters:
       Valid values are 'linux' or 'ovs'. This determines whether the infra vlan interface
       is created as a linux interface or an OVS interface. For openshift on openstack, the
       interface should be a OVS interface.
-  NeutronOVSFirewallDriver:
-    default: 'neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver'
-    description: |
-      Configure the classname of the firewall driver to use for implementing
-      security groups. Possible values depend on system configuration. Some
-      examples are: noop, openvswitch, iptables_hybrid. The default value of an
-      empty string will result in a default supported configuration.
-    type: string
   ACIEnableBondWatchService:
     type: boolean
     default: false
@@ -128,72 +103,29 @@ parameters:
     type: string
     default: '10.0.0.32'
 resources:
-  NeutronBase:
-    type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
-    properties:
-      ServiceData: {get_param: ServiceData}
-      ServiceNetMap: {get_param: ServiceNetMap}
-      DefaultPasswords: {get_param: DefaultPasswords}
-      EndpointMap: {get_param: EndpointMap}
-      RoleName: {get_param: RoleName}
-      RoleParameters: {get_param: RoleParameters}
-
-#  Ovs:
-#    type: /usr/share/openstack-tripleo-heat-templates/puppet/services/openvswitch.yaml
-#    properties:
-#      ServiceNetMap: {get_param: ServiceNetMap}
-#      DefaultPasswords: {get_param: DefaultPasswords}
-#      EndpointMap: {get_param: EndpointMap}
-
-  # Merging role-specific parameters (RoleParameters) with the default parameters.
-  # RoleParameters will have the precedence over the default parameters.
-  RoleParametersValue:
-    type: OS::Heat::Value
-    properties:
-      type: json
-      value:
-        map_replace:
-          - map_replace:
-            - neutron::agents::ml2::ovs::bridge_mappings: NeutronBridgeMappings
-              #vswitch::ovs::enable_hw_offload: OvsHwOffload
-            - values: {get_param: [RoleParameters]}
-          - values:
-              NeutronBridgeMappings: {get_param: NeutronBridgeMappings}
-              #OvsHwOffload: {get_param: OvsHwOffload}
-
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
 
 outputs:
   role_data:
-    description: Role data for the Neutron OVS agent service.
+    description: Role data for the Opflex agent service.
     value:
       service_name: opflex_agent
-#      ovs_upgrade_tasks: {get_attr: [Ovs, role_data, upgrade_tasks]}
       config_settings:
         map_merge:
-          - get_attr: [NeutronBase, role_data, config_settings]
-          - get_attr: [RoleParametersValue, value]
-          - neutron::agents::ml2::ovs::local_ip: {get_param: [ServiceNetMap, NeutronTenantNetwork]}
-            tripleo.opflex_agent.firewall_rules:
-              '297 opflex vxlan networks':
-                proto: 'udp'
-                dport: 8472
-              '298 opflex igmp accept':
-                proto: 'igmp'
-            ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
-            ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
-            ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
-            ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
-            ciscoaci::opflex::opflex_disabled_features: {get_param: ACIOpflexDisabledFeatures}
-            ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
-            ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
-            ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
-            ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}
-            ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
-            ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
-            ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
-            ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
+        - ciscoaci::opflex::aci_opflex_uplink_interface: {get_param: ACIOpflexUplinkInterface}
+        - ciscoaci::opflex::aci_apic_infravlan: {get_param: ACIApicInfraVlan}
+        - ciscoaci::opflex::opflex_interface_type: {get_param: ACIOpflexInterfaceType}
+        - ciscoaci::opflex::aci_apic_systemid: {get_param: ACIApicSystemId}
+        - ciscoaci::opflex::opflex_disabled_features: {get_param: ACIOpflexDisabledFeatures}
+        - ciscoaci::opflex::opflex_enable_bond_watch: {get_param: ACIEnableBondWatchService}
+        - ciscoaci::opflex::aci_opflex_encap_mode: {get_param: ACIOpflexEncapMode}
+        - ciscoaci::opflex::aci_apic_infra_subnet_gateway: {get_param: ACIApicInfraSubnetGateway}
+        - ciscoaci::opflex::aci_apic_infra_anycast_address: {get_param: ACIApicInfraAnycastAddr}
+        - ciscoaci::opflex::opflex_target_bridge_to_patch: {get_param: ACIOpflexBridgeToPatch}
+        - ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
+        - ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
+        - ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
       puppet_config:
         config_volume: opflex
         puppet_tags: opflex_config
@@ -207,7 +139,7 @@ outputs:
         # on the unix domain socket - /run/openvswitch/db.sock
         volumes:
           - /lib/modules:/lib/modules:ro
-          - /run/openvswitch:/run/openvswitch
+          - /run/openvswitch:/run/openvswitch:shared,z
           - /etc/os-net-config:/etc/os-net-config:ro
       kolla_config:
         /var/lib/kolla/config_files/ciscoaci_opflex_agent.json:
@@ -218,7 +150,13 @@ outputs:
               merge: true
               preserve_properties: true
           permissions:
-            - path: /var/log/neutron
+            - path: /var/log/opflex
+              owner: neutron:neutron
+              recurse: true
+            - path: /var/lib/opflex-agent-ovs
+              owner: neutron:opflexep
+              recurse: true
+            - path: /run/opflex
               owner: neutron:neutron
               recurse: true
       docker_config_scripts: {get_attr: [ContainersCommon, container_config_scripts]}
@@ -238,15 +176,17 @@ outputs:
                 - {get_attr: [ContainersCommon, volumes]}
                 -
                   - /var/lib/kolla/config_files/ciscoaci_opflex_agent.json:/var/lib/kolla/config_files/config.json:ro
-                  - /run/openvswitch:/run/openvswitch
+                  - /run/openvswitch:/run/openvswitch:shared,z
                   - /var/lib/config-data/puppet-generated/opflex/:/var/lib/kolla/config_files/src:ro
                   - /var/lib/config-data/puppet-generated/neutron/etc/neutron/neutron.conf:/etc/neutron/neutron.conf:ro
                   - /var/lib/config-data/puppet-generated/neutron/etc/neutron/metadata_agent.ini:/etc/neutron/metadata_agent.ini:ro
                   - /var/log/containers/opflex:/var/log/opflex
                   - /var/log/containers/neutron:/var/log/neutron
-                  - /var/run/openvswitch/:/var/run/openvswitch/
+                  - /var/run/openvswitch/:/var/run/openvswitch/:shared,z
                   - /run/netns:/run/netns:shared
                   - /lib/modules:/lib/modules:ro
+                  - /var/lib/opflex/files:/var/lib/opflex-agent-ovs:shared,z
+                  - /var/lib/opflex/sockets:/run/opflex:shared,z
             environment:
               KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
       host_prep_tasks:
@@ -258,6 +198,29 @@ outputs:
               command: ip netns delete ns_temp
               ignore_errors: True
               when: ipnetns_add_result.rc == 0
+
+            - name: Check for opflex persistent directory structure
+              stat:
+                path: /var/lib/opflex
+              register: opflex_path
+
+            - block:
+              - name: create persistent directories
+                file:
+                  path: "{{ item.path }}"
+                  state: directory
+                  setype: "{{ item.setype }}"
+                  mode: "{{ item.mode|default(omit) }}"
+                with_items:
+                  - { 'path': /var/lib/opflex/files/endpoints, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/services, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/ids, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/mcast, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/droplog, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/faults, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/sockets, 'setype': svirt_sandbox_file_t }
+              when:
+                - not opflex_path.stat.exists
 
             - name: create persistent logs directory for cisco opflex agent
               file:
@@ -339,15 +302,6 @@ outputs:
                  aci_opflex_uplink_interface: "{{ oui.stdout }}"
               when: aci_opflex_uplink_interface is not defined
        
-#            - name: bring down opflex infra vlan interface
-#              command: ifdown vlan"{{ aci_apic_infravlan }}"
-#              ignore_errors: True
-#            - name: delete interfaces file
-#              file:
-#                path: /etc/sysconfig/network-interfaces/vlan"{{ aci_apic_infravlan  }}"
-#                state: absent
-#              ignore_errors: True
-#
             - name: setup infra interface file ovs type
               copy:
                 dest: "/etc/sysconfig/network-scripts/ifcfg-{{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
@@ -468,22 +422,6 @@ outputs:
               when:
                 - opflex_target_bridge_to_patch != ""
                 - aci_opflex_encap_mode == "vlan"
-            - block:
-              - name: Copy in cleanup script
-                copy:
-                  content: {get_file: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-cleanup}
-                  dest: '/usr/libexec/neutron-cleanup'
-                  force: yes
-                  mode: '0755'
-              - name: Copy in cleanup service
-                copy:
-                  content: {get_file: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-cleanup.service}
-                  dest: '/usr/lib/systemd/system/neutron-cleanup.service'
-                  force: yes
-              - name: Enabling the cleanup service
-                service:
-                  name: neutron-cleanup
-                  enabled: yes
       external_upgrade_tasks:
         - when:
             - step|int == 1
