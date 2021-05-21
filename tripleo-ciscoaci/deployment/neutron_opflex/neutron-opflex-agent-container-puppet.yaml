@@ -138,6 +138,9 @@ outputs:
             - path: /run/opflex
               owner: neutron:neutron
               recurse: true
+            - path: /var/lib/neutron
+              owner: neutron:neutron
+              recurse: true
       docker_config_scripts: {get_attr: [ContainersCommon, container_config_scripts]}
       docker_config:
         step_4:
@@ -165,7 +168,7 @@ outputs:
                   - /run/openvswitch/:/run/openvswitch/:shared,z
                   - /run/netns:/run/netns:shared
                   - /var/log/containers/neutron:/var/log/neutron
-                  - /var/lib/neutron:/var/lib/neutron
+                  - /var/lib/neutron:/var/lib/neutron:shared,z
                   - /var/lib/opflex/files:/var/lib/opflex-agent-ovs:shared,z
                   - /var/lib/opflex/sockets:/run/opflex:shared,z
             environment:
