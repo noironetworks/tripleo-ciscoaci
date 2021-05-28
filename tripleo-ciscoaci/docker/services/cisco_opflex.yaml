@@ -543,6 +543,15 @@ outputs:
           service: name=opflex-agent state=stopped enabled=no
           when:
             - opflex_agent_enabled|bool
+        # We have to restart the containerized version, because the supervisord
+        # stopped it due to excessive crashes (couldn't access resources that were
+        # shared by the opfle-agent that had been running on the hypervisor).
+        - name: Restart containerized opflex_agent
+          command: docker restart ciscoaci_opflex_agent
+          become: True
+          ignore_errors: True
+          when:
+            - opflex_agent_enabled|bool
 
         # As part of an FFU from OSP10, the previous ML2 configuration
         # file gets deleted, but also backed up as an rpmsave file. This
