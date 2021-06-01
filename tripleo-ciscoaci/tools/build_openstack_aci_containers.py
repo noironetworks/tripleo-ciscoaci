@@ -39,6 +39,12 @@ def determine_ucloud_ip():
     else:
         return uip
 
+def file_repo_path(repotext):
+    lines = repotext.split("\n")
+    for line in lines:
+        if "baseurl" in line:
+            if line.split("=")[1].split(":")[0] == 'file':
+                return line.split("=")[1].split(":")[1][2:]
 
 def build_containers(ucloud_ip, upstream_registry, regseparator,
                      pushurl, pushtag, container_name, arr, repotext,
@@ -78,8 +84,9 @@ def build_containers(ucloud_ip, upstream_registry, regseparator,
 
     build_dir = tempfile.mkdtemp()
     # We only need to copy the repo data over if we're using the tarball
-    if repo_tar_file:
-        shutil.copytree('/opt/cisco_aci_repo', '%s/opt/cisco_aci_repo' % build_dir)
+    source_path = '/opt/cisco_aci_repo' if repo_tar_file else file_repo_path(repotext)
+    if source_path:
+        shutil.copytree(source_path, '%s/opt/cisco_aci_repo' % build_dir)
     repofile = os.path.join(build_dir, 'aci.repo')
     with open(repofile, 'w') as fh:
        fh.write(repotext)
@@ -97,8 +104,8 @@ USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, summary, description, ucloud_ip)
     blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms %s\n" % additional_repos
-    if repo_tar_file:
-        blob = blob + "ADD /opt/cisco_aci_repo /opt/cisco_aci_repo \n"
+    if source_path:
+        blob = blob + "ADD %s %s \n" % (source_path, source_path)
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
     blob = blob + "RUN mkdir /licenses \n"
     blob = blob + "Copy LICENSE.txt /licenses/ \n"
