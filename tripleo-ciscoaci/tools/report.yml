@@ -144,6 +144,7 @@
         - system
         - ovs
         - neutron/config-data/puppet-generated
+        - neutron_opflex/config-data/puppet-generated
         - nova/config-data/puppet-generated
         - opflex/config-data/puppet-generated
         - containers/config-data/puppet-generated
@@ -167,10 +168,6 @@
       delegate_to: localhost
       no_log: True
 
-    - name: podman copy
-      shell: "podman cp ciscoaci_opflex_agent:/var/lib/opflex-agent-ovs /tmp"
-      become: true
-   
     - name: exec commands
       shell: "{{ item.value.cmd }}"
       register: ctrl_output
