@@ -23,7 +23,7 @@
         rpath: /var/lib/config-data/neutron_opflex/
         lpath: neutron_opflex/config-data
       opflex_state:
-        rpath: /tmp/opflex-agent-ovs
+        rpath: /var/lib/opflex/files
         lpath: opflex
       puppet_neutron:
         rpath: /var/lib/config-data/puppet-generated/neutron/
