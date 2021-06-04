@@ -163,8 +163,8 @@ def main():
                       help="Upstream registry separator for images, eg. '/' for normal upstream registrys (default). Will be added between upstream registry name and container name. Use '_' for satellite based registries.",
                       default="/",
                       dest='regseparator')
-    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 15",
-                      default='15', dest='release_tag')
+    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 15.0",
+                      default='15.0', dest='release_tag')
     parser.add_argument("-t", "--tag", help="tag for images, defaults to current timestamp",
                       default=timestamp, dest='tag')
     parser.add_argument("-a", "--additional-repos",
