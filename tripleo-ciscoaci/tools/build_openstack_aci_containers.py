@@ -112,7 +112,7 @@ ENV no_proxy="${no_proxy},%s"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
     if user == '':
-        blob = blob + "USER %s \n" % def_user
+        blob = blob + "USER \"\" \n"
     else:
         blob = blob + "USER %s \n" % user
 
@@ -295,7 +295,6 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum --releasever=8.2 -y install python3-aci-integration-module python3-neutron-opflex-agent ciscoaci-puppet ethtool python3-apicapi lldpd "],
             "osd_param_name": ["ContainerCiscoLldpImage"],
-            "user": 'root',
             "summary":"This is Ciscoaci LLDP container",
             "description":"This will be deployed on the controller and compute nodes",
         },
@@ -306,7 +305,6 @@ gpgcheck=0
             "run_cmds": ["yum --releasever=8.2 -y install python3-apicapi ciscoaci-puppet python3-aci-integration-module python3-neutron-opflex-agent python3-openstack-neutron-gbp python3-gbpclient ",
                          "update-crypto-policies --set LEGACY"],
             "osd_param_name": ["ContainerCiscoAciAimImage", "ContainerCiscoAciAimConfigImage"],
-            "user": 'root',
             "summary":"This is Ciscoaci AIM container",
             "description":"This will be deployed on the controller nodes",
         },
@@ -316,7 +314,6 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum --releasever=8.2 -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd os-net-config"],
             "osd_param_name": ["ContainerOpflexAgentImage"],
-            "user": 'root',
             "summary":"This is Ciscoaci Opflex Agent container",
             "description":"This will be deployed on the controller and compute nodes",
         },
@@ -326,7 +323,6 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum --releasever=8.2 -y install ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp"],
             "osd_param_name": ["ContainerNeutronOpflexAgentImage"],
-            "user": 'root',
         },
     }
 
