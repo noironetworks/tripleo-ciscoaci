@@ -297,7 +297,7 @@ outputs:
 
             - name: bring up infra interface
               command: "/sbin/ifup {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-              when: infra_dhcp_file is changed or infra_interface is changed
+              ignore_errors: True
 
             - name: setup br-fabric bridge
               command: "/bin/ovs-vsctl -- --may-exist add-br br-fabric"
@@ -523,7 +523,9 @@ outputs:
 
             - name: bring up infra interface
               command: "/sbin/ifup {{ aci_opflex_uplink_interface }}.{{ aci_apic_infravlan }}"
-              when: step|int == 2 and (infra_dhcp_file is changed or infra_interface is changed)
+              ignore_errors: True
+              when:
+                - step|int == 2
 
       post_upgrade_tasks:
         # This was moved to post_upgrade_tasks in order to ensure that
