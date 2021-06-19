@@ -108,7 +108,7 @@ outputs:
       docker_config:
         step_4:
           ciscoaci_opflex_agent:
-            start_order: 14
+            start_order: 18
             image: {get_param: DockerOpflexAgentImage}
             net: host
             pid: host
