@@ -103,6 +103,7 @@ description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, summary, description, ucloud_ip)
+    blob = blob + "RUN dnf config-manager --disable ubi-8-baseos --disable ubi-8-appstream --disable ubi-8-codeready-builder\n"
     blob = blob + "RUN dnf config-manager --enable openstack-15-for-rhel-8-x86_64-rpms %s\n" % additional_repos
     if source_path:
         blob = blob + "ADD %s %s \n" % (source_path, source_path)
