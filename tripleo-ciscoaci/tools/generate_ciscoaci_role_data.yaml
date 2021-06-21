@@ -1,0 +1,21 @@
+---
+- name: Add cisco-specific composable services to custom roles file
+  hosts: undercloud
+  vars:
+    custom_roles_file: /home/stack/templates/custom_roles_data.yaml
+  tasks:
+  - name: Copy /usr/share/openstack-tripleo-heat-templates/roles_data.yaml to templates directory
+    command: cp /usr/share/openstack-tripleo-heat-templates/roles_data.yaml "{{ custom_roles_file }}"
+  - name: Add the agent composable services to Controller and Compute roles
+    replace:
+      path: "{{ custom_roles_file }}"
+      regexp: 'NeutronOvsAgent\n(?!{{repl_str}})'
+      replace: 'NeutronOvsAgent\n{{repl_str}}'
+    vars:
+      repl_str: '    - OS::TripleO::Services::CiscoAciOpflexAgent\n    - OS::TripleO::Services::CiscoAciLldp\n'
+  - name: Add the AIM composable services to the Controller role
+    lineinfile:
+      path: "{{ custom_roles_file }}"
+      insertbefore: '    - OS::TripleO::Services::CiscoAciOpflexAgent'
+      firstmatch: yes
+      line: '    - OS::TripleO::Services::CiscoAciAIM'
