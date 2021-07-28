@@ -109,6 +109,10 @@ parameters:
     type: string
     default: ''
     description: comma separated string of switch id's which form vpc pairs. Example '101:102,103:104'
+  ACIOptimizedDhcp:
+    type: boolean
+    default: true
+    description: Enable Optimized DHCP service
   ACIOptimizedMetadata:
     type: boolean
     default: true
@@ -237,6 +241,7 @@ outputs:
             ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
             ciscoaci::aim_config::aci_scope_infra: {get_param: ACIScopeInfra}
             ciscoaci::aim_config::aci_host_links: {get_param: ACIHostLinks}
+            ciscoaci::ml2::aci_optimized_dhcp: {get_param: ACIOptimizedDhcp}
             ciscoaci::ml2::aci_optimized_metadata: {get_param: ACIOptimizedMetadata}
             ciscoaci::aim_config::aci_scope_names: {get_param: ACIScopeNames}
             ciscoaci::aim_config::aci_scope_infra: {get_param: ACIScopeInfra}
