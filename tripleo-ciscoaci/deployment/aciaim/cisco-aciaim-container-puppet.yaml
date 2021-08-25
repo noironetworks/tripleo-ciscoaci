@@ -191,6 +191,16 @@ parameters:
       interfaces on each agent.
     type: comma_delimited_list
     default: ""
+  AciPhysDomMappings:
+    description: >
+      List of <physical_network>:<ACI Physdom>
+      By default each physnet maps to a precreated ACI 
+      physdom with pdom_<physnet_name>. For example 
+      physnet0 will map to physdom named pdom_phynet0
+      This parameter allows user to override the mapping. 
+      Example: "physnet0:my_pdom0, physnet1:my_pdom1"
+    type: comma_delimited_list
+    default: ""
   OpflexEndpointReqTimeout:
     default: 10
     type: number
@@ -307,6 +317,7 @@ outputs:
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
             ciscoaci::aim_config::neutron_network_vlan_ranges: {get_param: NeutronNetworkVLANRanges}
+            ciscoaci::aim_config::aci_phys_dom_mappings: {get_param: AciPhysDomMappings}
             ciscoaci::aim_config::physical_device_mappings: {get_param: NeutronPhysicalDevMappings}
             ciscoaci::aim_config::aci_external_routed_domain_name: {get_param: AciExternalRoutedDomain}
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
