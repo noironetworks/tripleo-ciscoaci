@@ -355,8 +355,8 @@ outputs:
               command: "ip link set dev br-fabric up"
 
             - name: Pause for 5 sec
-              pause:
-                seconds: 5
+              wait_for:
+                timeout: 5
 
             - name: set patch from br-fabric to "{{ neutron_external_bridge }}"
               command: "/bin/ovs-vsctl -- --may-exist add-port br-fabric patch-fab-ex -- set Interface patch-fab-ex type=patch options:peer=patch-ex-fab"
