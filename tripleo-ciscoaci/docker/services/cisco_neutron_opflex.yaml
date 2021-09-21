@@ -166,6 +166,7 @@ outputs:
                   - { 'path': /var/lib/opflex/files/mcast, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/files/droplog, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/files/faults, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/restarts, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/sockets, 'setype': svirt_sandbox_file_t }
               when:
                 - not opflex_path.stat.exists
