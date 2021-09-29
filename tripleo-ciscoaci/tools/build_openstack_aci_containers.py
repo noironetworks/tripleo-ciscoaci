@@ -111,6 +111,7 @@ ENV no_proxy="${no_proxy},%s"
     blob = blob + "Copy LICENSE.txt /licenses/ \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
+    blob = blob + "RUN dnf -y update-minimal --security --sec-severity=Important --sec-severity=Critical && dnf clean all \n"
     if user == '':
         blob = blob + "USER \"\" \n"
     else:
