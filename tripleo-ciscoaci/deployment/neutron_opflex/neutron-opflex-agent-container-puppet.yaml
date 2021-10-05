@@ -201,10 +201,26 @@ outputs:
                   - { 'path': /var/lib/opflex/files/mcast, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/files/droplog, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/files/faults, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/files/restarts, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/sockets, 'setype': svirt_sandbox_file_t }
               when:
                 - not opflex_path.stat.exists
+
+            - name: Check for opflex restart directory
+              stat:
+                path: /var/lib/opflex/files/retarts
+              register: opflex_restart_path
+
+            - block:
+              - name: create restart directory, if needed
+                file:
+                  path: "{{ item.path }}"
+                  state: directory
+                  setype: "{{ item.setype }}"
+                  mode: "{{ item.mode|default(omit) }}"
+                with_items:
+                  - { 'path': /var/lib/opflex/files/restarts, 'setype': svirt_sandbox_file_t }
+              when:
+                - not opflex_restart_path.stat.exists
 
             - block:
               - name: Copy in cleanup script
