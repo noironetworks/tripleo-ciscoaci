@@ -50,6 +50,21 @@ parameters:
     default: false
     description: Remove package if the service is being disabled during upgrade
     type: boolean
+  AciAimAidLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutron.server
+      file: /var/log/containers/aim/aim-aid.log
+  AciAimRpcLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutron.server
+      file: /var/log/containers/aim/aim-event-service-rpc.log
+  AciAimPollingLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutron.server
+      file: /var/log/containers/aim/aim-event-service-polling.log
   NeutronApiOptVolumes:
     default: []
     description: list of optional volumes to be mounted
@@ -329,6 +344,14 @@ outputs:
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
       # BEGIN DOCKER SETTINGS
+      service_config_settings:
+        map_merge:
+          - get_attr: [NeutronMl2Base, role_data, service_config_settings]
+          - rsyslog:
+              tripleo_logging_sources_ciscoaci_aim:
+                - {get_param: AciAimAidLoggingSource}
+                - {get_param: AciAimRpcLoggingSource}
+                - {get_param: AciAimPollingLoggingSource}
       puppet_config:
         config_volume: aim
         puppet_tags: aim_conf,aimctl_config

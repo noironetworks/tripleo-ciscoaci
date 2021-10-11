@@ -44,6 +44,11 @@ parameters:
     default: false
     description: Remove package if the service is being disabled during upgrade
     type: boolean
+  NeutronOpflexAgentLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutron.agent
+      file: /var/log/containers/neutron/neutron-opflex-agent.log
   NeutronBridgeMappings:
     description: >
       The OVS logical->physical bridge mappings to use. See the Neutron
@@ -109,6 +114,12 @@ outputs:
               '298 opflex igmp accept':
                 proto: 'igmp'
           - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: false
+      service_config_settings:
+        map_merge:
+          - get_attr: [NeutronBase, role_data, service_config_settings]
+          - rsyslog:
+              tripleo_logging_sources_neutron_opflex_agent:
+                - {get_param: NeutronOpflexAgentLoggingSource}
       puppet_config:
         config_volume: neutron_opflex
         puppet_tags:

@@ -37,17 +37,43 @@ parameters:
     default: false
     description: Remove package if the service is being disabled during upgrade
     type: boolean
+  CiscoAciLldpLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutron.server
+      file: /var/log/containers/neutron/cisco-apic-host-agent.log
+  CiscoAciLldpSupervisordLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutron.server
+      file: /var/log/containers/neutron/cisco-apic-host-agent.log
 
 resources:
 
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
+  NeutronBase:
+    type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
+    properties:
+      ServiceData: {get_param: ServiceData}
+      ServiceNetMap: {get_param: ServiceNetMap}
+      DefaultPasswords: {get_param: DefaultPasswords}
+      EndpointMap: {get_param: EndpointMap}
+      RoleName: {get_param: RoleName}
+      RoleParameters: {get_param: RoleParameters}
 
 outputs:
   role_data:
     description: Role data for Cisco Aci LLDP service
     value:
       service_name: ciscoaci_lldp_service
+      service_config_settings:
+        map_merge:
+          - get_attr: [NeutronBase, role_data, service_config_settings]
+          - rsyslog:
+              tripleo_logging_sources_ciscoaci_lldp:
+                - {get_param: CiscoAciLldpLoggingSource}
+                - {get_param: CiscoAciLldpSupervisordLoggingSource}
       puppet_config:
         config_volume: neutron
         puppet_tags: 
