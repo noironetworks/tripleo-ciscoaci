@@ -46,6 +46,31 @@ def file_repo_path(repotext):
             if line.split("=")[1].split(":")[0] == 'file':
                 return line.split("=")[1].split(":")[1][2:]
 
+def pull_containers(ucloud_ip, upstream_registry, regseparator,
+                     pushurl, pushtag, container_name, arr, repotext,
+                     license_text, release_tag):
+    print("Pulling ACI %s container" % container_name)
+    if "aci_container" in arr.keys():
+        print("here")
+        aci_container = "%s/%s" %(pushurl, arr['aci_container'])
+        src_container = "registry.connect.redhat.com/noiro/%s" %(arr['aci_container'])
+    else:
+        aci_container = "%s/%s-ciscoaci" % (pushurl, arr['rhel_container'])
+        src_container = "registry.connect.redhat.com/noiro/%s-ciscoaci" % (arr['rhel_container'])
+
+
+    print("src-container ={}".format(src_container))
+    print("aci-container ={}".format(aci_container))
+    pcmd ="podman pull %s:%s" % (src_container, release_tag)
+    print(pcmd)
+    subprocess.check_call(shlex.split(pcmd))
+    tcmd  =  "podman tag  %s:%s %s:%s" % (src_container, release_tag, aci_container, release_tag)
+    print(tcmd)
+    subprocess.check_call(shlex.split(tcmd))
+    cmd ="openstack tripleo container image push --local %s:%s" % (aci_container, release_tag)
+    print(cmd)
+    subprocess.check_call(shlex.split(cmd))
+
 def build_containers(ucloud_ip, upstream_registry, regseparator,
                      pushurl, pushtag, container_name, arr, repotext,
                      license_text, release_tag, additional_repos, repo_tar_file):
@@ -175,6 +200,10 @@ def main():
                       dest='additional_repos')
     parser.add_argument("--force", help="Override check for md5sum mismatch",
 	              dest='force', action='store_true')
+    parser.add_argument("-b", "--build",
+                      help="Build containers localy instead of pulling from upstream",
+                      dest='rebuild',
+                      action='store_true')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--aci_repo_file",
@@ -187,6 +216,7 @@ def main():
 		      type=extant_file,
 		      metavar="FILE",
                       help="Path to openstack-aci-rpms-repo tar file. This will be use to create a local yum repository on undercloud")
+
     options = parser.parse_args()
 
 
@@ -356,10 +386,20 @@ limitations under the License.
     additional_repos = ''
     for repo in options.additional_repos:
         additional_repos += "--enable %s " % repo
-    for container in containers_list:
-        build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
-              options.tag, container, container_array[container], repotext, license_text,
-              options.release_tag, additional_repos, options.repo_tar_file)
+    if options.rebuild:
+        print("Will rebuild containers localy")
+        for container in containers_list:
+            build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
+                  options.tag, container, container_array[container], repotext, license_text,
+                  options.release_tag, additional_repos, options.repo_tar_file)
+        mytag = options.tag
+    else:
+        print("Will pull containers from upstream repo")
+        for container in containers_list:
+           pull_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
+                  options.tag, container, container_array[container], repotext, license_text,
+                  options.release_tag) 
+        mytag = options.release_tag
 
     config_blob = "parameter_defaults:\n"
     for container in containers_list:
@@ -368,10 +408,11 @@ limitations under the License.
           container_name = container_array[container]['aci_container']
        else:
           container_name = "%s-ciscoaci" % container_array[container]['rhel_container']
+       print("container = {}".format(container_name))
        for pn in param_names:
           config_blob = config_blob + \
                 "   %s: %s/%s:%s \n" % (
-                    pn, pushurl, container_name, options.tag)
+                    pn, pushurl, container_name, mytag)
     with open(options.output_file, "w") as fh:
        fh.write(config_blob)
 
