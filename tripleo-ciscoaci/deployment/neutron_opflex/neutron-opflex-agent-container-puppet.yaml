@@ -145,7 +145,7 @@ outputs:
       docker_config:
         step_4:
           ciscoaci_neutron_opflex_agent:
-            start_order: 14
+            start_order: 18
             image: {get_param: ContainerNeutronOpflexAgentImage}
             net: host
             pid: host
