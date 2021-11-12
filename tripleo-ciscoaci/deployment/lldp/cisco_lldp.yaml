@@ -53,8 +53,6 @@ outputs:
         puppet_tags: 
         step_config: include ciscoaci::lldp
         config_image: {get_param: ContainerCiscoLldpImage}
-        volumes:
-          - /lib/modules:/lib/modules:ro
       kolla_config:
         /var/lib/kolla/config_files/ciscoaci_lldp.json:
           command: /bin/supervisord -c /etc/neutron/ciscoaci/ciscoaci_lldp_supervisord.conf
@@ -84,7 +82,6 @@ outputs:
                 - {get_attr: [ContainersCommon, volumes]}
                 -
                   - /var/lib/kolla/config_files/ciscoaci_lldp.json:/var/lib/kolla/config_files/config.json:ro
-                  - /lib/modules:/lib/modules:ro
                   - /var/lib/config-data/puppet-generated/neutron/:/var/lib/kolla/config_files/src:ro
                   - /var/log/containers/neutron:/var/log/neutron
             environment:
