@@ -201,7 +201,7 @@ def main():
     parser.add_argument("--force", help="Override check for md5sum mismatch",
 	              dest='force', action='store_true')
     parser.add_argument("-p", "--pull",
-                      help="Pull upstream containers instead of building locally"
+                      help="Pull upstream containers instead of building locally",
                       dest='pull',
                       action='store_true')
 
