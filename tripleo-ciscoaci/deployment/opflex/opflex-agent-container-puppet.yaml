@@ -102,6 +102,10 @@ parameters:
   ACIApicInfraAnycastAddr:
     type: string
     default: '10.0.0.32'
+  OpflexEnableDroplog:
+    default: false
+    description: Enable droplog feature on hypervisors
+    type: boolean
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -221,6 +225,32 @@ outputs:
                   - { 'path': /var/lib/opflex/sockets, 'setype': svirt_sandbox_file_t }
               when:
                 - not opflex_path.stat.exists
+
+            - name: set conditions
+              set_fact:
+                internal_droplog_enabled: {get_param: OpflexEnableDroplog}
+
+            - name: Create droplog config file
+              when: internal_droplog_enabled|bool
+              copy:
+                dest: "/var/lib/opflex/files/droplog/a.droplogcfg"
+                content: |
+                        {"drop-log-enable" : true}
+
+            - name: Delete droplog config file
+              when: not internal_droplog_enabled|bool
+              file:
+                path: "/var/lib/opflex/files/droplog/a.droplogcfg"
+                state: absent
+
+            - name: Enable droplog in iptables
+              when: internal_droplog_enabled|bool
+              shell: iptables -t nat -A OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
+
+            - name: Disable droplog in iptables
+              when: not internal_droplog_enabled|bool
+              shell: iptables -t nat -D OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
+              ignore_errors: true
 
             - name: Check for opflex restart directory
               stat:
