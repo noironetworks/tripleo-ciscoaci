@@ -59,8 +59,6 @@ def pull_containers(ucloud_ip, upstream_registry, regseparator,
         src_container = "registry.connect.redhat.com/noiro/%s-ciscoaci" % (arr['rhel_container'])
 
 
-    print("src-container ={}".format(src_container))
-    print("aci-container ={}".format(aci_container))
     pcmd ="podman pull %s:%s" % (src_container, release_tag)
     print(pcmd)
     subprocess.check_call(shlex.split(pcmd))
@@ -123,12 +121,12 @@ def build_containers(ucloud_ip, upstream_registry, regseparator,
     blob = """
 FROM %s
 MAINTAINER Cisco Systems
-LABEL name="%s" vendor="Cisco Systems" version="16.1" release="1" summary="%s" \
+LABEL name="%s" vendor="Cisco Systems" version="%s" release="1" summary="%s" \
 description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
-       """ % (rhel_container, aci_container, summary, description, ucloud_ip)
-    blob = blob + "RUN dnf config-manager --enable openstack-16.1-for-rhel-8-x86_64-rpms %s\n" % additional_repos
+       """ % (rhel_container, aci_container, release_tag, summary, description, ucloud_ip)
+    blob = blob + "RUN dnf config-manager --enable openstack-%s-for-rhel-8-x86_64-rpms %s\n" % (release_tag, additional_repos)
     if source_path:
         blob = blob + "ADD %s %s \n" % (source_path, source_path)
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
@@ -189,8 +187,8 @@ def main():
                       help="Upstream registry separator for images, eg. '/' for normal upstream registrys (default). Will be added between upstream registry name and container name. Use '_' for satellite based registries.",
                       default="/",
                       dest='regseparator')
-    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 16.1",
-                      default='16.1', dest='release_tag')
+    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 16.2",
+                      default='16.2', dest='release_tag')
     parser.add_argument("-t", "--tag", help="tag for images, defaults to current timestamp",
                       default=timestamp, dest='tag')
     parser.add_argument("-a", "--additional-repos",
@@ -223,6 +221,11 @@ def main():
     current_user = getpass.getuser()
     current_grp = grp.getgrgid(pwd.getpwnam('stack').pw_gid).gr_name
 
+    if (options.release_tag == "16.1"):
+          rhel_version = "8.2"
+    else:
+          rhel_version = "8.4"
+    print("rhel version = {}".format(rhel_version))
     if not options.ucloud_ip:
        ucloud_ip = determine_ucloud_ip()
        if ucloud_ip == 1:
@@ -294,7 +297,7 @@ gpgcheck=0
         'horizon': {
             "rhel_container": "openstack-horizon",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install python3-openstack-dashboard-gbp",
+            "run_cmds": ["yum --releasever={} -y install python3-openstack-dashboard-gbp".format(rhel_version),
                          "mkdir -p /usr/lib/heat",
                          "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python3.6/site-packages/openstack_dashboard/local/enabled"],
             "osd_param_name": ["ContainerHorizonImage"],
@@ -305,7 +308,7 @@ gpgcheck=0
         'heat': {
             "rhel_container": "openstack-heat-engine",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install python3-openstack-heat-gbp python3-gbpclient",
+            "run_cmds": ["yum --releasever={} -y install python3-openstack-heat-gbp python3-gbpclient".format(rhel_version),
                          "mkdir -p /usr/lib/heat",
                          "cp -r /usr/lib/python3.6/site-packages/gbpautomation /usr/lib/heat"],
             "osd_param_name": ["ContainerHeatEngineImage"],
@@ -315,7 +318,7 @@ gpgcheck=0
         'neutron-server': {
             "rhel_container": "openstack-neutron-server",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install python3-apicapi python3-neutron-opflex-agent libmodelgbp python3-openstack-neutron-gbp ciscoaci-puppet python3-gbpclient python3-aci-integration-module "],
+            "run_cmds": ["yum --releasever={} -y install python3-apicapi python3-neutron-opflex-agent libmodelgbp python3-openstack-neutron-gbp ciscoaci-puppet python3-gbpclient python3-aci-integration-module ".format(rhel_version)],
             "osd_param_name": ["ContainerNeutronApiImage", "ContainerNeutronConfigImage"],
             "summary":"This is Ciscoaci modified Neutron API container",
             "description":"This will be deployed on the controller  nodes",
@@ -324,7 +327,7 @@ gpgcheck=0
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-lldp",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install python3-aci-integration-module python3-neutron-opflex-agent ciscoaci-puppet ethtool python3-apicapi lldpd "],
+            "run_cmds": ["yum --releasever={} -y install python3-aci-integration-module python3-neutron-opflex-agent ciscoaci-puppet ethtool python3-apicapi lldpd ".format(rhel_version)],
             "osd_param_name": ["ContainerCiscoLldpImage"],
             "summary":"This is Ciscoaci LLDP container",
             "description":"This will be deployed on the controller and compute nodes",
@@ -333,7 +336,7 @@ gpgcheck=0
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-aim",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install python3-apicapi ciscoaci-puppet python3-aci-integration-module python3-neutron-opflex-agent python3-openstack-neutron-gbp python3-gbpclient ",
+            "run_cmds": ["yum --releasever={} -y install python3-apicapi ciscoaci-puppet python3-aci-integration-module python3-neutron-opflex-agent python3-openstack-neutron-gbp python3-gbpclient ".format(rhel_version),
                          "update-crypto-policies --set LEGACY"],
             "osd_param_name": ["ContainerCiscoAciAimImage", "ContainerCiscoAciAimConfigImage"],
             "summary":"This is Ciscoaci AIM container",
@@ -343,7 +346,7 @@ gpgcheck=0
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-opflex",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd os-net-config"],
+            "run_cmds": ["yum --releasever={} -y install opflex-agent opflex-agent-renderer-openvswitch noiro-openvswitch-lib noiro-openvswitch-otherlib ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp lldpd os-net-config".format(rhel_version)],
             "osd_param_name": ["ContainerOpflexAgentImage"],
             "summary":"This is Ciscoaci Opflex Agent container",
             "description":"This will be deployed on the controller and compute nodes",
@@ -352,7 +355,7 @@ gpgcheck=0
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-neutron-opflex",
             "packages": [],
-            "run_cmds": ["yum --releasever=8.2 -y install ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp"],
+            "run_cmds": ["yum --releasever={} -y install ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp".format(rhel_version)],
             "osd_param_name": ["ContainerNeutronOpflexAgentImage"],
         },
     }
