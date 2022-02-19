@@ -108,7 +108,7 @@ outputs:
                 dport: 8472
               '298 opflex igmp accept':
                 proto: 'igmp'
-          - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: false
+          - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: true
       puppet_config:
         config_volume: neutron_opflex
         puppet_tags:
