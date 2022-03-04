@@ -40,17 +40,17 @@ parameters:
   OpflexAgentLoggingSource:
     type: json
     default:
-      tag: openstack.neutron.agent
+      tag: openstack.opflex.agent
       file: /var/log/containers/opflex/opflex-agent.log
   McastAgentLoggingSource:
     type: json
     default:
-      tag: openstack.opflex.agent
+      tag: openstack.opflex.mcastagent
       file: /var/log/containers/opflex/mcast.log
   OpflexSupervisordLoggingSource:
     type: json
     default:
-      tag: openstack.opflex.agent
+      tag: openstack.opflex.supervisord
       file: /var/log/containers/opflex/opflex-supervisord.log
   ACIOpflexUplinkInterface:
     type: string
@@ -160,7 +160,9 @@ outputs:
           - rsyslog:
               tripleo_logging_sources_opflex_agent:
                 - {get_param: OpflexAgentLoggingSource}
+              tripleo_logging_sources_opflex_mcast_agent:
                 - {get_param: McastAgentLoggingSource}
+              tripleo_logging_sources_opflex_supervisord:
                 - {get_param: OpflexSupervisordLoggingSource}
       puppet_config:
         config_volume: opflex

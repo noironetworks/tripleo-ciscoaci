@@ -40,12 +40,7 @@ parameters:
   CiscoAciLldpLoggingSource:
     type: json
     default:
-      tag: openstack.neutron.server
-      file: /var/log/containers/neutron/cisco-apic-host-agent.log
-  CiscoAciLldpSupervisordLoggingSource:
-    type: json
-    default:
-      tag: openstack.neutron.server
+      tag: ciscoaci.lldp
       file: /var/log/containers/neutron/cisco-apic-host-agent.log
 
 resources:
@@ -66,14 +61,13 @@ outputs:
   role_data:
     description: Role data for Cisco Aci LLDP service
     value:
-      service_name: ciscoaci_lldp_service
+      service_name: ciscoaci_lldp
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
           - rsyslog:
               tripleo_logging_sources_ciscoaci_lldp:
                 - {get_param: CiscoAciLldpLoggingSource}
-                - {get_param: CiscoAciLldpSupervisordLoggingSource}
       puppet_config:
         config_volume: neutron
         puppet_tags: 

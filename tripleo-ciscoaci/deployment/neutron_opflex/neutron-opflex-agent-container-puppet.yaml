@@ -47,7 +47,7 @@ parameters:
   NeutronOpflexAgentLoggingSource:
     type: json
     default:
-      tag: openstack.neutron.agent
+      tag: openstack.neutronopflex.agent
       file: /var/log/containers/neutron/neutron-opflex-agent.log
   NeutronBridgeMappings:
     description: >

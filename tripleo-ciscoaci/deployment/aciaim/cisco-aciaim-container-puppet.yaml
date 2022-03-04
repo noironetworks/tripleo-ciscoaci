@@ -53,18 +53,8 @@ parameters:
   AciAimAidLoggingSource:
     type: json
     default:
-      tag: openstack.neutron.server
+      tag: ciscoaci.aim
       file: /var/log/containers/aim/aim-aid.log
-  AciAimRpcLoggingSource:
-    type: json
-    default:
-      tag: openstack.neutron.server
-      file: /var/log/containers/aim/aim-event-service-rpc.log
-  AciAimPollingLoggingSource:
-    type: json
-    default:
-      tag: openstack.neutron.server
-      file: /var/log/containers/aim/aim-event-service-polling.log
   NeutronApiOptVolumes:
     default: []
     description: list of optional volumes to be mounted
@@ -287,7 +277,7 @@ outputs:
   role_data:
     description: Role data for the Aci AIM role.
     value:
-      service_name: neutron_plugin_ciscoaci
+      service_name: ciscoaci_aim
       config_settings:
         map_merge:
           - get_attr: [NeutronMl2Base, role_data, config_settings]
@@ -350,8 +340,6 @@ outputs:
           - rsyslog:
               tripleo_logging_sources_ciscoaci_aim:
                 - {get_param: AciAimAidLoggingSource}
-                - {get_param: AciAimRpcLoggingSource}
-                - {get_param: AciAimPollingLoggingSource}
       puppet_config:
         config_volume: aim
         puppet_tags: aim_conf,aimctl_config
