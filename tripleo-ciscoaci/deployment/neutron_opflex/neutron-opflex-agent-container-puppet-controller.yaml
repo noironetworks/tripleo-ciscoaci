@@ -47,7 +47,7 @@ parameters:
   NeutronOpflexAgentLoggingSource:
     type: json
     default:
-      tag: openstack.neutron.agent
+      tag: openstack.neutronopflex.controlleragent
       file: /var/log/containers/neutron/neutron-opflex-agent.log
   NeutronBridgeMappings:
     description: >
@@ -118,7 +118,7 @@ outputs:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
           - rsyslog:
-              tripleo_logging_sources_neutron_opflex_agent:
+              tripleo_logging_sources_neutron_opflex_controller_agent:
                 - {get_param: NeutronOpflexAgentLoggingSource}
       puppet_config:
         config_volume: neutron_opflex
