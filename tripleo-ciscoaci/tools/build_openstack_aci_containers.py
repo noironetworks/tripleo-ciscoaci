@@ -71,7 +71,8 @@ def pull_containers(ucloud_ip, upstream_registry, regseparator,
 
 def build_containers(ucloud_ip, upstream_registry, regseparator,
                      pushurl, pushtag, container_name, arr, repotext,
-                     license_text, release_tag, additional_repos, repo_tar_file):
+                     license_text, release_tag, additional_repos, repo_tar_file,
+                     rhel_version):
     print("Building ACI %s container" % container_name)
 
     aci_pkgs = arr['packages']
@@ -126,7 +127,7 @@ description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, release_tag, summary, description, ucloud_ip)
-    blob = blob + "RUN dnf config-manager --enable openstack-%s-for-rhel-8-x86_64-rpms %s\n" % (release_tag, additional_repos)
+    blob = blob + "RUN dnf --releasever=%s config-manager --enable openstack-%s-for-rhel-8-x86_64-rpms %s\n" % (rhel_version, release_tag, additional_repos)
     if source_path:
         blob = blob + "ADD %s %s \n" % (source_path, source_path)
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
@@ -134,7 +135,7 @@ ENV no_proxy="${no_proxy},%s"
     blob = blob + "Copy LICENSE.txt /licenses/ \n"
     for cmd in docker_run_cmds:
         blob = blob + "RUN %s \n" % cmd
-    blob = blob + "RUN dnf -y update-minimal --security --sec-severity=Important --sec-severity=Critical && dnf clean all \n"
+    blob = blob + "RUN dnf --releasever=%s -y update-minimal --security --sec-severity=Important --sec-severity=Critical && dnf clean all \n" % rhel_version
     if user == '':
         blob = blob + "USER \"\" \n"
     else:
@@ -394,7 +395,7 @@ limitations under the License.
         for container in containers_list:
             build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
                   options.tag, container, container_array[container], repotext, license_text,
-                  options.release_tag, additional_repos, options.repo_tar_file)
+                  options.release_tag, additional_repos, options.repo_tar_file, rhel_version)
         mytag = options.tag
     else:
         print("Will pull containers from upstream repo")
