@@ -400,7 +400,7 @@ outputs:
                       - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
                       - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
                       - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
-                command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci', 
+                command: ['/usr/bin/bootstrap_host_exec', 'ciscoaci_aim', 
                           '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
                           '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&', 
                           '/usr/bin/aimctl', 'config', 'update', '&&', 
@@ -424,7 +424,7 @@ outputs:
                           - /var/lib/config-data/neutron/etc/my.cnf.d/tripleo.cnf:/etc/my.cnf.d/tripleo.cnf:ro
                           - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
                           - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
-                    command: ['/usr/bin/bootstrap_host_exec', 'neutron_plugin_ciscoaci',
+                    command: ['/usr/bin/bootstrap_host_exec', 'ciscoaci_aim',
                               '/bin/gbp-db-manage', '--config-file', '/etc/neutron/neutron.conf', '--config-file', '/etc/neutron/plugin.ini', 'upgrade', 'head', '&&',
                               '/usr/bin/aimctl', 'db-migration', 'upgrade', 'head', '&&',
                               '/usr/bin/aimctl', 'config', 'update', '&&',
@@ -469,7 +469,7 @@ outputs:
         #          - /var/lib/config-data/aim/etc/aim:/etc/aim:ro
         #          - /var/lib/config-data/neutron/etc/neutron:/etc/neutron:ro
         #          - /var/lib/config-data/neutron/usr/share/neutron:/usr/share/neutron:ro
-        #    command: ['/usr/bin/bootstrap_host_exec','neutron_plugin_ciscoaci', '/etc/aim/physnet_mapping.sh']
+        #    command: ['/usr/bin/bootstrap_host_exec','ciscoaci_aim', '/etc/aim/physnet_mapping.sh']
         #    environment:
         #      KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
       host_prep_tasks: 
