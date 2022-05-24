@@ -154,6 +154,7 @@ outputs:
         - ciscoaci::opflex::opflex_interface_mtu: {get_param: ACIOpflexInterfaceMTU}
         - ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
         - ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
+        - ciscoaci::opflex::opflex_enable_drop_log: {get_param: OpflexEnableDroplog}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
