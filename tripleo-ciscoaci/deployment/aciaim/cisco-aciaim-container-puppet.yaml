@@ -476,6 +476,7 @@ outputs:
         - name: create persistent logs directory for cisco aci aim
           file:
             path: /var/log/containers/aim
+            mode: "0777"
             state: directory
       metadata_settings:
         get_attr: [NeutronMl2Base, role_data, metadata_settings]
