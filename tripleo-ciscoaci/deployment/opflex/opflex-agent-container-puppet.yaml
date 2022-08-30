@@ -121,6 +121,11 @@ parameters:
     default: false
     description: Enable droplog feature on hypervisors
     type: boolean
+  OpflexDroplogConfig:
+    type: json
+    default: {"drop-log-enable" : true}
+    description: >
+       Customize the DropLog config file content to add prune part for the packets.
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -155,6 +160,7 @@ outputs:
         - ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
         - ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
         - ciscoaci::opflex::opflex_enable_drop_log: {get_param: OpflexEnableDroplog}
+        - ciscoaci::opflex::opflex_droplog_config: {get_param: OpflexDroplogConfig}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
@@ -269,8 +275,7 @@ outputs:
               when: internal_droplog_enabled|bool
               copy:
                 dest: "/var/lib/opflex/files/droplog/a.droplogcfg"
-                content: |
-                        {"drop-log-enable" : true}
+                content: {get_param: OpflexDroplogConfig}
 
             - name: Delete droplog config file
               when: not internal_droplog_enabled|bool
