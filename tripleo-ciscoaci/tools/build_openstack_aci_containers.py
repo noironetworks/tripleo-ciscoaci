@@ -307,6 +307,7 @@ gpgcheck=0
 
         },
         'heat': {
+            "user": "heat",
             "rhel_container": "openstack-heat-engine",
             "packages": [],
             "run_cmds": ["yum --releasever={} -y install python3-openstack-heat-gbp python3-gbpclient".format(rhel_version),
@@ -317,6 +318,7 @@ gpgcheck=0
             "description":"This will be deployed on the controller  nodes",
         },
         'neutron-server': {
+            "user": "neutron",
             "rhel_container": "openstack-neutron-server",
             "packages": [],
             "run_cmds": ["yum --releasever={} -y install python3-apicapi python3-neutron-opflex-agent libmodelgbp python3-openstack-neutron-gbp ciscoaci-puppet python3-gbpclient python3-aci-integration-module ".format(rhel_version)],
@@ -334,6 +336,7 @@ gpgcheck=0
             "description":"This will be deployed on the controller and compute nodes",
         },
         'ciscoaci-aim': {
+            "user": "neutron",
             "rhel_container": "openstack-neutron-server",
             "aci_container": "openstack-ciscoaci-aim",
             "packages": [],
@@ -344,6 +347,7 @@ gpgcheck=0
             "description":"This will be deployed on the controller nodes",
         },
         'opflex-agent': {
+            "user": "neutron",
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-opflex",
             "packages": [],
@@ -353,6 +357,7 @@ gpgcheck=0
             "description":"This will be deployed on the controller and compute nodes",
         },
         'neutron-opflex-agent': {
+            "user": "neutron",
             "rhel_container": "openstack-neutron-openvswitch-agent",
             "aci_container": "openstack-ciscoaci-neutron-opflex",
             "packages": [],
