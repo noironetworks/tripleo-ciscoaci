@@ -172,6 +172,28 @@ parameters:
     default: true
     description: >
       When true, act on keystone notifications to purge
+  AciKeystoneNotificationExchange:
+    type: string
+    default: 'keystone'
+    description: >
+      When AciKeystoneNotificationPurge is set to true,
+      determines which exchange to use for notifications.
+  AciKeystoneNotificationTopic:
+    type: string
+    default: 'notifications'
+    description: >
+      When AciKeystoneNotificationPurge is set to true,
+      determines which topic to use for notifications.
+  AciKeystoneNotificationPool:
+    type: string
+    default: None
+    description: >
+      When AciKeystoneNotificationPurge is set to true,
+      determines which pool to use for notifications.
+      This value should only be configured to a value other
+      than 'None' when there are other notification listeners
+      subscribed to the same keystone exchange and topic, whose
+      pool is set to 'None'.
   AciOpenvswitch:
     type: boolean
     default: false
@@ -271,6 +293,9 @@ outputs:
             ciscoaci::ml2::opflex_endpoint_request_timeout: {get_param: OpflexEndpointReqTimeout}
             ciscoaci::ml2::opflex_nat_mtu_size: {get_param: OpflexNatMtuSize}
             ciscoaci::ml2::enable_keystone_notification_purge: {get_param:  AciKeystoneNotificationPurge}
+            ciscoaci::ml2::keystone_notification_exchange: {get_param:  AciKeystoneNotificationExchange}
+            ciscoaci::ml2::keystone_notification_topic: {get_param:  AciKeystoneNotificationTopic}
+            ciscoaci::ml2::keystone_notification_pool: {get_param:  AciKeystoneNotificationPool}
             ciscoaci::ml2::tenant_network_types: {get_param: AciTenantNetworkType}
             ciscoaci::ml2::intel_cna_nic_disable_lldp: {get_param: IntelCnaNicDisableLLDP}
             ciscoaci::ml2::aci_external_routed_domain: {get_param: AciExternalRoutedDomain}
