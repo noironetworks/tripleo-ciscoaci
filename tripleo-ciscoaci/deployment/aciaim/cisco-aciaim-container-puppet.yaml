@@ -362,7 +362,7 @@ outputs:
               preserve_properties: true
           permissions:
             - path: /var/log/aim
-              owner: root:root
+              owner: neutron:neutron
               recurse: true
       container_config_scripts: {get_attr: [ContainersCommon, container_config_scripts]}
       docker_config:
