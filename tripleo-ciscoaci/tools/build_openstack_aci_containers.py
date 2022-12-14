@@ -341,7 +341,7 @@ gpgcheck=0
             "aci_container": "openstack-ciscoaci-aim",
             "packages": [],
             "run_cmds": ["yum --releasever={} -y install python3-apicapi ciscoaci-puppet python3-aci-integration-module python3-neutron-opflex-agent python3-openstack-neutron-gbp python3-gbpclient ".format(rhel_version),
-                         "update-crypto-policies --set LEGACY"],
+                         "update-crypto-policies --set LEGACY", "chown -R neutron:neutron /run/aid"],
             "osd_param_name": ["ContainerCiscoAciAimImage", "ContainerCiscoAciAimConfigImage"],
             "summary":"This is Ciscoaci AIM container",
             "description":"This will be deployed on the controller nodes",
