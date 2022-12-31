@@ -81,8 +81,22 @@ parameters:
     type: string
     default: ''
   ACIApicSystemId:
+    description: The System ID is used to support running multiple OpenStack
+                 clouds on a single ACI fabric. Resources created in ACI are
+                 annotated with the System ID to associate the resource with
+                 a given OpenStack cloud. The System ID is also used in the
+                 generation of some name strings used for ACI resources as
+                 well. In most installations, the System ID must not exceed
+                 the default maximum length of 16 characters. However, in
+                 some special cases, it can be increased, which requires
+                 also setting the ACIApicSystemIdMaxLength parameter.
     type: string
     default: 'aci_openstack'
+  ACIApicSystemIdMaxLength:
+    description: Maximmum length of the ACIApicSystemId. Please consult the
+                 business unit before changing this value from the default.
+    type: number
+    default: 16
   ACIApicInfraVlan:
     type: number
     default: 4093
@@ -297,6 +311,7 @@ outputs:
             ciscoaci::aim_config::aci_apic_certname: {get_param: ACIApicCertName}
             ciscoaci::aim_config::aci_apic_privatekey: {get_param: ACIApicPrivateKey}
             ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
+            ciscoaci::aim_config::aci_apic_systemid_length: {get_param: ACIApicSystemIdMaxLength}
             ciscoaci::aim_config::aci_apic_aep: {get_param: ACIApicEntityProfile}
             ciscoaci::aim_config::aci_vpc_pairs: {get_param: ACIVpcPairs}
             ciscoaci::aim_config::aci_encap_mode: {get_param: ACIOpflexEncapMode}
