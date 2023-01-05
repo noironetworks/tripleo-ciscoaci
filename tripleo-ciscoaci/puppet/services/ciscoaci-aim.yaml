@@ -216,6 +216,14 @@ parameters:
   OpflexLoggingLevel:
     default: debug2
     type: string
+  OpflexEnableOvsdbAsyncParser:
+    default: false
+    description: Enable new asynchronous parsing of messaging interface with OVSDB
+    type: boolean
+  OpflexEnableOpflexAsyncParser:
+    default: false
+    description: Enable new asynchronous parsing of messaging interface with OpFlex
+    type: boolean
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:225.2.255.255"
@@ -304,6 +312,8 @@ outputs:
             ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
             ciscoaci::aim_config::mcast_ranges: {get_param: AciVmmMcastRanges}
             ciscoaci::aim_config::multicast_address: {get_param: AciVmmMulticastAddress}
+            ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
+            ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
       step_config: |
         include tripleo::profile::base::ciscoaci_aim
       metadata_settings:
