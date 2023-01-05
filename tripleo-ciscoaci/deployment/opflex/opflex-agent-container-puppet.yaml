@@ -126,6 +126,14 @@ parameters:
     default: {"drop-log-enable" : true}
     description: >
        Customize the DropLog config file content to add prune part for the packets.
+  OpflexEnableOvsdbAsyncParser:
+    default: false
+    description: Enable new asynchronous parsing of messaging interface with OVSDB
+    type: boolean
+  OpflexEnableOpflexAsyncParser:
+    default: false
+    description: Enable new asynchronous parsing of messaging interface with OpFlex
+    type: boolean
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -161,6 +169,8 @@ outputs:
         - ciscoaci::opflex::opflex_log_level: {get_param: OpflexLoggingLevel}
         - ciscoaci::opflex::opflex_enable_drop_log: {get_param: OpflexEnableDroplog}
         - ciscoaci::opflex::opflex_droplog_config: {get_param: OpflexDroplogConfig}
+        - ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
+        - ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
