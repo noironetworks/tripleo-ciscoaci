@@ -126,6 +126,14 @@ parameters:
     default: {"drop-log-enable" : true}
     description: >
        Customize the DropLog config file content to add prune part for the packets.
+  OpflexDroplogTarget:
+    description: >
+       Target for droplog messages. If not configured, droplog messages are logged
+       in the current opflex-agent log file. If set to "syslog", the log messages are
+       sent to syslog. Any other value is expected to be a fully-specified path and
+       file to place log messages (directory is expected to be pre-existing).
+    type: string
+    default: ''
   OpflexEnableOvsdbAsyncParser:
     default: false
     description: Enable new asynchronous parsing of messaging interface with OVSDB
@@ -171,6 +179,7 @@ outputs:
         - ciscoaci::opflex::opflex_droplog_config: {get_param: OpflexDroplogConfig}
         - ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
         - ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
+        - ciscoaci::opflex::opflex_droplog_file: {get_param: OpflexDroplogTarget}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
