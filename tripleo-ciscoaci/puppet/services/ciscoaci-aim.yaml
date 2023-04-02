@@ -224,6 +224,12 @@ parameters:
     default: false
     description: Enable new asynchronous parsing of messaging interface with OpFlex
     type: boolean
+  OpflexRetryDelay:
+    default: 10
+    description: >
+       The starting backoff value for retrying of policy requests, in seconds. The
+       backoff is exponential, starting at this value, and continuing up to 16 retries.
+    type: number
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:225.2.255.255"
@@ -314,6 +320,7 @@ outputs:
             ciscoaci::aim_config::multicast_address: {get_param: AciVmmMulticastAddress}
             ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
             ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
+            ciscoaci::opflex::opflex_retry_delay: {get_param: OpflexRetryDelay}
       step_config: |
         include tripleo::profile::base::ciscoaci_aim
       metadata_settings:

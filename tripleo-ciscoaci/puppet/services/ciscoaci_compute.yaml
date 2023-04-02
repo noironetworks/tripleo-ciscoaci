@@ -90,6 +90,12 @@ parameters:
     default: false
     description: Enable new asynchronous parsing of messaging interface with OpFlex
     type: boolean
+  OpflexRetryDelay:
+    default: 10
+    description: >
+       The starting backoff value for retrying of policy requests, in seconds. The
+       backoff is exponential, starting at this value, and continuing up to 16 retries.
+    type: number
   IntelCnaNicDisableLLDP:
     type: boolean
     default: true
@@ -175,5 +181,6 @@ outputs:
             ciscoaci::opflex::neutron_external_bridge: {get_param: NeutronExternalBridge}
             ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
             ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
+            ciscoaci::opflex::opflex_retry_delay: {get_param: OpflexRetryDelay}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute
