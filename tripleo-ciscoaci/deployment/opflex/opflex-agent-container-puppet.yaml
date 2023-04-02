@@ -142,6 +142,12 @@ parameters:
     default: false
     description: Enable new asynchronous parsing of messaging interface with OpFlex
     type: boolean
+  OpflexRetryDelay:
+    default: 10
+    description: >
+       The starting backoff value for retrying of policy requests, in seconds. The
+       backoff is exponential, starting at this value, and continuing up to 16 retries.
+    type: number
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -180,6 +186,7 @@ outputs:
         - ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
         - ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
         - ciscoaci::opflex::opflex_droplog_file: {get_param: OpflexDroplogTarget}
+        - ciscoaci::opflex::opflex_retry_delay: {get_param: OpflexRetryDelay}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
