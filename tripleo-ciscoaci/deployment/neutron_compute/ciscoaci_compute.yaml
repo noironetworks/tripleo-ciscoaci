@@ -176,5 +176,9 @@ outputs:
             - system_upgrade_stop_services
           block:
             - name: Dummy2
+              ignore_errors: true
+              file:
+                  path: /tmp/neutron_compute
+                  state: absent
               vars:
                 tripleo_delegate_to: "{{ groups['neutron_api'] | default([]) }}"
