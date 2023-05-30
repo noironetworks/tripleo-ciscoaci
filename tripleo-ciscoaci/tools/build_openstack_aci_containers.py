@@ -188,8 +188,8 @@ def main():
                       help="Upstream registry separator for images, eg. '/' for normal upstream registrys (default). Will be added between upstream registry name and container name. Use '_' for satellite based registries.",
                       default="/",
                       dest='regseparator')
-    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 16.2",
-                      default='16.2', dest='release_tag')
+    parser.add_argument("-i", "--image-tag", help="Upstream release tag for images, defaults to 17.0",
+                      default='17.0', dest='release_tag')
     parser.add_argument("-t", "--tag", help="tag for images, defaults to current timestamp",
                       default=timestamp, dest='tag')
     parser.add_argument("-a", "--additional-repos",
@@ -222,10 +222,7 @@ def main():
     current_user = getpass.getuser()
     current_grp = grp.getgrgid(pwd.getpwnam('stack').pw_gid).gr_name
 
-    if (options.release_tag == "16.1"):
-          rhel_version = "8.2"
-    else:
-          rhel_version = "8.4"
+    rhel_version = "9.0"
     print("rhel version = {}".format(rhel_version))
     if not options.ucloud_ip:
        ucloud_ip = determine_ucloud_ip()
