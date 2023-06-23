@@ -195,14 +195,14 @@ parameters:
       determines which topic to use for notifications.
   AciKeystoneNotificationPool:
     type: string
-    default: ''
+    default: None
     description: >
       When AciKeystoneNotificationPurge is set to true,
       determines which pool to use for notifications.
       This value should only be configured to a value other
-      than '' when there are other notification listeners
+      than 'None' when there are other notification listeners
       subscribed to the same keystone exchange and topic, whose
-      pool is set to ''.
+      pool is set to 'None'.
   AciOpenvswitch:
     type: boolean
     default: false
