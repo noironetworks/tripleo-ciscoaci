@@ -179,7 +179,7 @@ def main():
                       help="Containers to build, comma separated, default is all", dest='containers_tb', default='all')
     parser.add_argument("-s", "--upstream",
                       help="Upstream registry to pull base images from, eg. registry.access.redhat.com/rhosp13, defaults to registry.access.redhat.com/rhosp13",
-                      default='registry.redhat.io/rhosp-rhel8',
+                      default='registry.redhat.io/rhosp-rhel9',
                       dest='upstream_registry')
     parser.add_argument("-d", "--destregistry",
                       help="Destination registry to push to, eg: 1.100.1.1:8787/rhosp13",
