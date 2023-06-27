@@ -127,7 +127,7 @@ description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, release_tag, summary, description, ucloud_ip)
-    blob = blob + "RUN dnf --releasever=%s config-manager --enable openstack-%s-for-rhel-8-x86_64-rpms %s\n" % (rhel_version, release_tag, additional_repos)
+    blob = blob + "RUN dnf --releasever=%s config-manager --enable openstack-%s-for-rhel-9-x86_64-rpms %s\n" % (rhel_version, release_tag, additional_repos)
     if source_path:
         blob = blob + "ADD %s %s \n" % (source_path, source_path)
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
@@ -193,7 +193,7 @@ def main():
     parser.add_argument("-t", "--tag", help="tag for images, defaults to current timestamp",
                       default=timestamp, dest='tag')
     parser.add_argument("-a", "--additional-repos",
-                      help="Additional repos to use when building containers (defaults to empty list). Use with 'rhel-8-for-x86_64-baseos-eus-rpms rhel-8-for-x86_64-appstream-eus-rpms' when using satellite.",
+                      help="Additional repos to use when building containers (defaults to empty list). Use with 'rhel-9-for-x86_64-baseos-eus-rpms rhel-9-for-x86_64-appstream-eus-rpms' when using satellite.",
                       nargs='*',
                       default=[],
                       dest='additional_repos')
