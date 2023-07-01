@@ -127,7 +127,7 @@ description="%s"
 USER root
 ENV no_proxy="${no_proxy},%s"
        """ % (rhel_container, aci_container, release_tag, summary, description, ucloud_ip)
-    blob = blob + "RUN dnf --releasever=%s config-manager --enable openstack-%s-for-rhel-9-x86_64-rpms %s\n" % (rhel_version, release_tag, additional_repos)
+    blob = blob + "RUN dnf --releasever=%s config-manager --enable openstack-%s-for-rhel-9-x86_64-rpms %s\n" % (rhel_version, ("17" if release_tag == "17.0" else release_tag),  additional_repos)
     if source_path:
         blob = blob + "ADD %s %s \n" % (source_path, source_path)
     blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
@@ -296,8 +296,7 @@ gpgcheck=0
             "rhel_container": "openstack-horizon",
             "packages": [],
             "run_cmds": ["yum --releasever={} -y install python3-openstack-dashboard-gbp".format(rhel_version),
-                         "mkdir -p /usr/lib/heat",
-                         "cp /usr/share/openstack-dashboard/openstack_dashboard/enabled/_*gbp* /usr/lib/python3.6/site-packages/openstack_dashboard/local/enabled"],
+                         "mkdir -p /usr/lib/heat"],
             "osd_param_name": ["ContainerHorizonImage"],
             "summary":"This is Ciscoaci modified Horizon container",
             "description":"This will be deployed on the controller  nodes",
@@ -309,7 +308,7 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum --releasever={} -y install python3-openstack-heat-gbp python3-gbpclient".format(rhel_version),
                          "mkdir -p /usr/lib/heat",
-                         "cp -r /usr/lib/python3.6/site-packages/gbpautomation /usr/lib/heat"],
+                         "cp -r /usr/lib/python3.9/site-packages/gbpautomation /usr/lib/heat"],
             "osd_param_name": ["ContainerHeatEngineImage"],
             "summary":"This is Ciscoaci modified HeatEngine container",
             "description":"This will be deployed on the controller  nodes",
