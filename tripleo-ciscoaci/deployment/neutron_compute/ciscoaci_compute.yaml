@@ -133,7 +133,6 @@ resources:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
     properties:
       ServiceNetMap: {get_param: ServiceNetMap}
-      DefaultPasswords: {get_param: DefaultPasswords}
       EndpointMap: {get_param: EndpointMap}
 
 outputs:
