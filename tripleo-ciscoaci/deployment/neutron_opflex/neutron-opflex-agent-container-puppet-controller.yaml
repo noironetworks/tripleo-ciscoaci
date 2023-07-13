@@ -101,6 +101,12 @@ outputs:
     description: Role data for the Neutron OVS agent service.
     value:
       service_name: neutron_opflex_agent
+      firewall_rules:
+        '297 opflex vxlan networks':
+          proto: 'udp'
+          dport: 8472
+        '298 opflex igmp accept':
+          proto: 'igmp'
       config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, config_settings]
@@ -111,7 +117,7 @@ outputs:
                 proto: 'udp'
                 dport: 8472
               '298 opflex igmp accept':
-                proto: 'igmp'
+                proto: 'igmp' 
           - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: true
       service_config_settings:
         map_merge:
