@@ -112,12 +112,6 @@ outputs:
           - get_attr: [NeutronBase, role_data, config_settings]
           - get_attr: [RoleParametersValue, value]
           - neutron::agents::ml2::ovs::local_ip: {get_param: [ServiceNetMap, NeutronTenantNetwork]}
-            tripleo.neutron_opflex_agent.firewall_rules:
-              '297 opflex vxlan networks':
-                proto: 'udp'
-                dport: 8472
-              '298 opflex igmp accept':
-                proto: 'igmp' 
           - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: true
       service_config_settings:
         map_merge:
