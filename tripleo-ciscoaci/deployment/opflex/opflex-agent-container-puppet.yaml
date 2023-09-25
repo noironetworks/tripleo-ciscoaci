@@ -42,11 +42,13 @@ parameters:
     default:
       tag: openstack.opflex.agent
       file: /var/log/containers/opflex/opflex-agent.log
+      startmsg.regex: “^.[0-9]{4}-[a-zA-Z]{3}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?] .(debug|info|warning|info|error)]”
   McastAgentLoggingSource:
     type: json
     default:
       tag: openstack.opflex.mcastagent
       file: /var/log/containers/opflex/mcast.log
+      startmsg.regex: “^.[0-9]{4}-[a-zA-Z]{3}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?] .(debug|info|warning|info|error)]”
   OpflexSupervisordLoggingSource:
     type: json
     default:
