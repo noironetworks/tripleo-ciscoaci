@@ -260,7 +260,7 @@ outputs:
           block:
             - name: Stop neutron-opflex container
               import_role:
-                name: tripleo-container-stop
+                name: tripleo_container_stop
               vars:
                 tripleo_containers_to_stop:
                   - ciscoaci_neutron_opflex_agent
