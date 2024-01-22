@@ -545,7 +545,7 @@ outputs:
           block:
             - name: Stop opflex container
               import_role:
-                name: tripleo-container-stop
+                name: tripleo_container_stop
               vars:
                 tripleo_containers_to_stop:
                   - ciscoaci_opflex_agent
