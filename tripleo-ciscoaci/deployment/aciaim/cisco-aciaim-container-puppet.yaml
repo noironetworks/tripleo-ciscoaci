@@ -363,7 +363,7 @@ outputs:
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
             ciscoaci::aim_config::gen1_hw_gratarps: {get_param: AciGen1HwGratArps}
-            ciscoaci::aim_config::enable_fault_subscriptions :{get_param: AciEnableFaultSubscription}
+            ciscoaci::aim_config::enable_faults_subscriptions: {get_param: AciEnableFaultSubscription}
       # BEGIN DOCKER SETTINGS
       service_config_settings:
         map_merge:
