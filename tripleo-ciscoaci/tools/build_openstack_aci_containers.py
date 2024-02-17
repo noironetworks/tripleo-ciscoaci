@@ -359,6 +359,8 @@ gpgcheck=0
             "packages": [],
             "run_cmds": ["yum --releasever={} -y install ciscoaci-puppet ethtool python3-neutron-opflex-agent python3-apicapi python3-openstack-neutron-gbp".format(rhel_version)],
             "osd_param_name": ["ContainerNeutronOpflexAgentImage"],
+            "summary":"This is Ciscoaci Neutron Opflex Agent container",
+            "description":"This will be deployed on the controller and compute nodes",
         },
     }
 
