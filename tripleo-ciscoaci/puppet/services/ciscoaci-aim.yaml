@@ -303,6 +303,14 @@ parameters:
   AciVmmMulticastAddress:
     type: string
     default: "225.1.2.3"
+  AciGen1HwGratArps:
+    type: boolean
+    default: false
+    description: >
+       First generation switch hardware cannot rely on gratiuitous ARPs for
+       EP move detection, when the move is within the same port. Set this flag
+       to True to ensure that gratuitous ARPs are sent go first generation
+       switch CPUs, in order to properly handle this type of EP move detection.
   EnableInternalTLS:
     type: boolean
     default: false
@@ -405,6 +413,7 @@ outputs:
             ciscoaci::opflex::opflex_statistics_system_interval: {get_param: OpflexStatisticsSystemInterval}
             ciscoaci::policy::custom_policies: {get_param: GbpCustomPolicies}
             ciscoaci::policy::policy_override: {get_param: GbpPolicyOverride}
+            ciscoaci::aim_config::gen1_hw_gratarps: {get_param: AciGen1HwGratArps}
       step_config: |
         include tripleo::profile::base::ciscoaci_aim
       metadata_settings:
