@@ -6,7 +6,7 @@
         ofile: aim/lldpctl
       dmtree:
         container: ciscoaci_opflex_agent
-        cmd: gbp_inspect -fpr -t dump -q DmtreeRoot
+        cmd: gbp_inspect --socket=/var/run/opflex/opflex-agent-inspect.sock -fpr -t dump -q DmtreeRoot
         ofile: opflex/DmtreeRoot
       ipnetns:
         container: ciscoaci_opflex_agent
