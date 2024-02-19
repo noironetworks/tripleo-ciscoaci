@@ -240,6 +240,54 @@ parameters:
        The starting backoff value for retrying of policy requests, in seconds. The
        backoff is exponential, starting at this value, and continuing up to 16 retries.
     type: number
+  OpflexStatisticsMode:
+    default: 'real'
+    description: > 
+       can be either
+              "real" - counters are based on actual data traffic. default.
+              "off" - turn off all counters.
+    type: string
+  OpflexStatisticsInterfaceEnabled:
+    default: true
+    type: boolean
+  OpflexStatisticsInterfaceInterval:
+    default: 30000
+    type: number
+  OpflexStatisticsContractEnabled:
+    default: true
+    type: boolean
+  OpflexStatisticsContractInterval:
+    default: 10000
+    type: number
+  OpflexStatisticsSecurityGroupEnabled:
+    default: true
+    type: boolean
+  OpflexStatisticsSecurityGroupInterval:
+    default: 10000
+    type: number
+  OpflexStatisticsServiceFlowDisabled:
+    default: false
+    description: Disable/Enable stats flow creation
+    type: boolean
+  OpflexStatisticsServiceEnabled:
+    default: true
+    description: Disable/Enable stats collection
+    type: boolean
+  OpflexStatisticsServiceInterval:
+    default: 10000
+    type: number
+  OpflexStatisticsTableDropEnabled:
+    default: true
+    type: boolean
+  OpflexStatisticsTableDropInterval:
+    default: 30000
+    type: number
+  OpflexStatisticsSystemEnabled:
+    default: true
+    type: boolean
+  OpflexStatisticsSystemInterval:
+    default: 10000
+    type: number
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:225.2.255.255"
@@ -332,6 +380,20 @@ outputs:
             ciscoaci::opflex::opflex_ovsdb_async_parser: {get_param: OpflexEnableOvsdbAsyncParser}
             ciscoaci::opflex::opflex_opflex_async_parser: {get_param: OpflexEnableOpflexAsyncParser}
             ciscoaci::opflex::opflex_retry_delay: {get_param: OpflexRetryDelay}
+            ciscoaci::opflex::opflex_statistics_mode: {get_param: OpflexStatisticsMode}
+            ciscoaci::opflex::opflex_statistics_interface_enabled: {get_param: OpflexStatisticsInterfaceEnabled}
+            ciscoaci::opflex::opflex_statistics_interface_interval: {get_param: OpflexStatisticsInterfaceInterval}
+            ciscoaci::opflex::opflex_statistics_contract_enabled: {get_param: OpflexStatisticsContractEnabled}
+            ciscoaci::opflex::opflex_statistics_contract_interval: {get_param: OpflexStatisticsContractInterval}
+            ciscoaci::opflex::opflex_statistics_security_group_enabled: {get_param: OpflexStatisticsSecurityGroupEnabled}
+            ciscoaci::opflex::opflex_statistics_security_group_interval: {get_param: OpflexStatisticsSecurityGroupInterval}
+            ciscoaci::opflex::opflex_statistics_service_flow_disabled: {get_param: OpflexStatisticsServiceFlowDisabled}
+            ciscoaci::opflex::opflex_statistics_service_enabled: {get_param: OpflexStatisticsServiceEnabled}
+            ciscoaci::opflex::opflex_statistics_service_interval: {get_param: OpflexStatisticsServiceInterval}
+            ciscoaci::opflex::opflex_statistics_table_drop_enabled: {get_param: OpflexStatisticsTableDropEnabled}
+            ciscoaci::opflex::opflex_statistics_table_drop_interval: {get_param: OpflexStatisticsTableDropInterval}
+            ciscoaci::opflex::opflex_statistics_system_enabled: {get_param: OpflexStatisticsSystemEnabled}
+            ciscoaci::opflex::opflex_statistics_system_interval: {get_param: OpflexStatisticsSystemInterval}
       step_config: |
         include tripleo::profile::base::ciscoaci_aim
       metadata_settings:
