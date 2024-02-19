@@ -311,6 +311,12 @@ parameters:
        EP move detection, when the move is within the same port. Set this flag
        to True to ensure that gratuitous ARPs are sent go first generation
        switch CPUs, in order to properly handle this type of EP move detection.
+  AciEnableFaultSubscription:
+    type: boolean
+    default: false
+    description: >
+       To subscribe to faults during the subscription for tenants with ACI.
+       Not subscribing to the faults improves the performance.
   EnableInternalTLS:
     type: boolean
     default: false
@@ -414,6 +420,7 @@ outputs:
             ciscoaci::policy::custom_policies: {get_param: GbpCustomPolicies}
             ciscoaci::policy::policy_override: {get_param: GbpPolicyOverride}
             ciscoaci::aim_config::gen1_hw_gratarps: {get_param: AciGen1HwGratArps}
+            ciscoaci::aim_config::enable_faults_subscriptions: {get_param: AciEnableFaultSubscription}
       step_config: |
         include tripleo::profile::base::ciscoaci_aim
       metadata_settings:
