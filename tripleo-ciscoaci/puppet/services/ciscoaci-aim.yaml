@@ -297,6 +297,12 @@ parameters:
   OpflexStatisticsSystemInterval:
     default: 10000
     type: number
+  OpflexStatisticsNatEnabled:
+    default: false
+    type: boolean
+  OpflexStatisticsNatInterval:
+    default: 10000
+    type: number
   AciVmmMcastRanges:
     type: string
     default: "225.2.1.1:225.2.255.255"
@@ -417,6 +423,8 @@ outputs:
             ciscoaci::opflex::opflex_statistics_table_drop_interval: {get_param: OpflexStatisticsTableDropInterval}
             ciscoaci::opflex::opflex_statistics_system_enabled: {get_param: OpflexStatisticsSystemEnabled}
             ciscoaci::opflex::opflex_statistics_system_interval: {get_param: OpflexStatisticsSystemInterval}
+            ciscoaci::opflex::opflex_statistics_nat_enabled: {get_param: OpflexStatisticsNatEnabled}
+            ciscoaci::opflex::opflex_statistics_nat_interval: {get_param: OpflexStatisticsNatInterval}
             ciscoaci::policy::custom_policies: {get_param: GbpCustomPolicies}
             ciscoaci::policy::policy_override: {get_param: GbpPolicyOverride}
             ciscoaci::aim_config::gen1_hw_gratarps: {get_param: AciGen1HwGratArps}

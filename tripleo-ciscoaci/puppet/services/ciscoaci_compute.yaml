@@ -144,6 +144,12 @@ parameters:
   OpflexStatisticsSystemInterval:
     default: 10000
     type: number
+  OpflexStatisticsNatEnabled:
+    default: false
+    type: boolean
+  OpflexStatisticsNatInterval:
+    default: 10000
+    type: number
   IntelCnaNicDisableLLDP:
     type: boolean
     default: true
@@ -244,5 +250,7 @@ outputs:
             ciscoaci::opflex::opflex_statistics_table_drop_interval: {get_param: OpflexStatisticsTableDropInterval}
             ciscoaci::opflex::opflex_statistics_system_enabled: {get_param: OpflexStatisticsSystemEnabled}
             ciscoaci::opflex::opflex_statistics_system_interval: {get_param: OpflexStatisticsSystemInterval}
+            ciscoaci::opflex::opflex_statistics_nat_enabled: {get_param: OpflexStatisticsNatEnabled}
+            ciscoaci::opflex::opflex_statistics_nat_interval: {get_param: OpflexStatisticsNatInterval}
       step_config: |
         include tripleo::profile::base::ciscoaci_compute
