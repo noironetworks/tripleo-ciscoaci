@@ -198,6 +198,12 @@ parameters:
   OpflexStatisticsSystemInterval:
     default: 10000
     type: number
+  OpflexStatisticsNatEnabled:
+    default: false
+    type: boolean
+  OpflexStatisticsNatInterval:
+    default: 10000
+    type: number
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -251,6 +257,8 @@ outputs:
         - ciscoaci::opflex::opflex_statistics_table_drop_interval: {get_param: OpflexStatisticsTableDropInterval}
         - ciscoaci::opflex::opflex_statistics_system_enabled: {get_param: OpflexStatisticsSystemEnabled}
         - ciscoaci::opflex::opflex_statistics_system_interval: {get_param: OpflexStatisticsSystemInterval}
+        - ciscoaci::opflex::opflex_statistics_nat_enabled: {get_param: OpflexStatisticsNatEnabled}
+        - ciscoaci::opflex::opflex_statistics_nat_interval: {get_param: OpflexStatisticsNatInterval}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
