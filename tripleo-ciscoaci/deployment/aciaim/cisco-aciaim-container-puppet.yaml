@@ -265,6 +265,20 @@ parameters:
   AciVmmMulticastAddress:
     type: string
     default: "225.1.2.3"
+  AciGen1HwGratArps:
+    type: boolean
+    default: false
+    description: >
+       First generation switch hardware cannot rely on gratiuitous ARPs for
+       EP move detection, when the move is within the same port. Set this flag
+       to True to ensure that gratuitous ARPs are sent go first generation
+       switch CPUs, in order to properly handle this type of EP move detection.
+  AciEnableFaultSubscription:
+    type: boolean
+    default: false
+    description: >
+       To subscribe to faults during the subscription for tenants with ACI.
+       Not subscribing to the faults improves the performance.
 
 conditions:
   fast_forward_upgrade: {not: {equals: [{get_param: ContainerCiscoAciAimImageStein},'']}}
@@ -347,6 +361,8 @@ outputs:
             ciscoaci::aim_config::rabbit_password: {get_param: RabbitPassword}
             ciscoaci::aim_config::rabbit_user: {get_param: RabbitUserName}
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
+            ciscoaci::aim_config::gen1_hw_gratarps: {get_param: AciGen1HwGratArps}
+            ciscoaci::aim_config::enable_faults_subscriptions: {get_param: AciEnableFaultSubscription}
       # BEGIN DOCKER SETTINGS
       service_config_settings:
         map_merge:
