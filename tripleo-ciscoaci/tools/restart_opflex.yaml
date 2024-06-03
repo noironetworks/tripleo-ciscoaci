@@ -1,0 +1,9 @@
+---
+- name: Locking the environment to a Red Hat Enterprise Linux release
+  hosts: overcloud
+  become: true
+  tasks:
+  - name: Restart tripleo_ciscoaci_opflex_agent  service, in all cases
+    ansible.builtin.service:
+      name: tripleo_ciscoaci_opflex_agent
+      state: restarted
