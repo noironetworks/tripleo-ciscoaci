@@ -205,7 +205,7 @@ parameters:
     default: 10000
     type: number
   OpflexEnableStartupPolicy:
-    default: false
+    default: true
     description: Enable the use of an initial policy file on startup
     type: boolean
   OpflexStartupPolicyFile:
