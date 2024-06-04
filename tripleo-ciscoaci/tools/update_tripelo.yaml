@@ -1,0 +1,22 @@
+---
+- name: Install Cisco tripleo code
+  hosts: undercloud
+  tasks:
+  - name: Step1. Remove old Cisco tripleo RPM, if present
+    become: yes
+    yum:
+      name: tripleo-ciscoaci
+      state: absent
+    ignore_errors: true
+  - name: Step2. Remove the existing tripleo directories
+    become: yes
+    shell: rm -rf /opt/ciscoaci-tripleo-heat-templates /home/stack/tripleo-ciscoaci
+    ignore_errors: true
+  - name: Step3. Clone tripleo-ciscoaci
+    git:
+      repo: 'https://github.com/noironetworks/tripleo-ciscoaci.git'
+      dest: /home/stack/tripleo-ciscoaci
+      version: train
+  - name: Step4. Copy over the tripleo directory
+    become: yes
+    shell: cp -rp /home/stack/tripleo-ciscoaci/tripleo-ciscoaci /opt/ciscoaci-tripleo-heat-templates
