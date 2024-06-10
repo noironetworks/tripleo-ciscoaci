@@ -1,0 +1,10 @@
+---
+- name: Remove new opflex-agent policy startup and switch sync configuration
+  hosts: overcloud
+  become: true
+  tasks:
+  - name: Remove the opflex-agent policy startup configuration
+    file:
+      path: "/var/lib/opflex/files/policy/pol.json"
+      state: absent
+
