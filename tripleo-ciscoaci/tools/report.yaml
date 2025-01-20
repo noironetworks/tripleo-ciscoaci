@@ -54,19 +54,19 @@
       path: "{{ tempdir.path }}/overcloud"
     register: acidir
 
-  - name: Display hostnames and ansible_user for Compute nodes
-    debug:
-      msg: "Hostname: {{ hostvars[item]['ansible_host'] }} {{ hostvars[item]['ctlplane_hostname'] }}"
-    loop: "{{ groups['controllers'] }}"
-    when: "{{ 'controllers' in groups and groups['controllers'] | length > 0 }}"
-  - name: Display hostnames and ansible_user for Compute nodes
-    debug:
-      msg: "Hostname: {{ hostvars[item]['ansible_host'] }} {{ hostvars[item]['ctlplane_hostname'] }}"
-    loop: "{{ groups['computes'] }}"
-    when: "{{ 'computes' in groups and groups['computes'] | length > 0 }}"
+#  - name: Display hostnames and ansible_user for Compute nodes
+#    debug:
+#      msg: "Hostname: {{ hostvars[item]['ansible_host'] }} {{ hostvars[item]['ctlplane_hostname'] }}"
+#    loop: "{{ groups['controllers'] }}"
+#    when: "{{ 'controllers' in groups and groups['controllers'] | length > 0 }}"
+#  - name: Display hostnames and ansible_user for Compute nodes
+#    debug:
+#      msg: "Hostname: {{ hostvars[item]['ansible_host'] }} {{ hostvars[item]['ctlplane_hostname'] }}"
+#    loop: "{{ groups['computes'] }}"
+#    when: "{{ 'computes' in groups and groups['computes'] | length > 0 }}"
 
 - hosts: controllers, computes
-  user: heat-admin
+  user: tripleo-admin
   gather_facts: false
   vars_files:
     - report_vars.yaml
@@ -148,7 +148,7 @@
       become_user: stack
       with_dict: "{{ rsync_dirs }}"
       delegate_to: localhost
-      remote_user: heat-admin
+      remote_user: tripleo-admin
       ignore_errors: true
 
     - name: sync controller directories
@@ -160,7 +160,7 @@
       become_user: stack
       with_dict: "{{ rsync_controller_dirs }}"
       delegate_to: localhost
-      remote_user: heat-admin
+      remote_user: tripleo-admin
       ignore_errors: true
       when: group_names[0] == "controllers"
 
