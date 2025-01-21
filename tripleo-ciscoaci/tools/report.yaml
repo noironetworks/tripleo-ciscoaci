@@ -162,7 +162,7 @@
       delegate_to: localhost
       remote_user: tripleo-admin
       ignore_errors: true
-      when: group_names[0] == "controllers"
+      when: group_names[0] == "Controller"
 
     - name: create archive
       shell: sudo tar -czvf "{{ hostvars['localhost']['dest_file'] }}" .
