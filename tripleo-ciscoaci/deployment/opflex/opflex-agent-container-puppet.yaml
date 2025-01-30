@@ -202,6 +202,24 @@ parameters:
   OpflexStatisticsNatInterval:
     default: 10000
     type: number
+  OpflexEnableStartupPolicy:
+    default: true
+    description: Enable the use of an initial policy file on startup
+    type: boolean
+  OpflexStartupPolicyFile:
+    default: /var/lib/opflex-agent-ovs/policy/pol.json
+    description: File to use for initial policy
+    type: string
+  OpflexStartupPolicyDuration:
+    default: 60
+    description: Time to wait after connection before resolving policy from peer
+    type: number
+  OpflexResolvePolicyAfterConnect:
+    default: false
+    description: >
+        Resolve using local policy only after connecting to peer, but
+        just for the duration specified in OpflexStartupPolicyDuration.
+    type: boolean
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -256,6 +274,10 @@ outputs:
         - ciscoaci::opflex::opflex_statistics_system_interval: {get_param: OpflexStatisticsSystemInterval}
         - ciscoaci::opflex::opflex_statistics_nat_enabled: {get_param: OpflexStatisticsNatEnabled}
         - ciscoaci::opflex::opflex_statistics_nat_interval: {get_param: OpflexStatisticsNatInterval}
+        - ciscoaci::opflex::opflex_startup_policy_enabled: {get_param: OpflexEnableStartupPolicy}
+        - ciscoaci::opflex::opflex_startup_policy_file: {get_param: OpflexStartupPolicyFile}
+        - ciscoaci::opflex::opflex_startup_policy_duration: {get_param: OpflexStartupPolicyDuration}
+        - ciscoaci::opflex::opflex_startup_policy_after_connect: {get_param: OpflexResolvePolicyAfterConnect}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
@@ -358,6 +380,7 @@ outputs:
                   - { 'path': /var/lib/opflex/files/mcast, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/files/droplog, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/files/faults, 'setype': svirt_sandbox_file_t }
+                  - { 'path': /var/lib/opflex/files/policy, 'setype': svirt_sandbox_file_t }
                   - { 'path': /var/lib/opflex/sockets, 'setype': svirt_sandbox_file_t }
               when:
                 - not opflex_path.stat.exists

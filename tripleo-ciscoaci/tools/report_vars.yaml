@@ -28,6 +28,9 @@
       puppet_neutron:
         rpath: /var/lib/config-data/puppet-generated/neutron/
         lpath: neutron/config-data/puppet-generated
+      opflex_agent:
+        rpath: /var/lib/neutron/opflex_agent/
+        lpath: opflex_agent/
       puppet_opflex:
         rpath: /var/lib/config-data/puppet-generated/opflex/
         lpath: opflex/config-data/puppet-generated
