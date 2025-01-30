@@ -42,18 +42,19 @@ parameters:
     default:
       tag: openstack.opflex.agent
       file: /var/log/containers/opflex/opflex-agent.log
-      startmsg.regex: “^.[0-9]{4}-[a-zA-Z]{3}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?] .(debug|info|warning|info|error)]”
+      startmsg.regex: "^.[0-9]{4}-[a-zA-Z]{3}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?] .(debug|info|warning|info|error)]"
   McastAgentLoggingSource:
     type: json
     default:
       tag: openstack.opflex.mcastagent
       file: /var/log/containers/opflex/mcast.log
-      startmsg.regex: “^.[0-9]{4}-[a-zA-Z]{3}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?] .(debug|info|warning|info|error)]”
+      startmsg.regex: "^.[0-9]{4}-[a-zA-Z]{3}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(.[0-9]+)?] .(debug|info|warning|info|error)]"
   OpflexSupervisordLoggingSource:
     type: json
     default:
       tag: openstack.opflex.supervisord
       file: /var/log/containers/opflex/opflex-supervisord.log
+      startmsg.regex: "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(,[0-9]+)? (DEBG|INFO|WARN|CRIT) "
   ACIOpflexUplinkInterface:
     type: string
     default: 'nic1'
@@ -287,9 +288,7 @@ outputs:
           - rsyslog:
               tripleo_logging_sources_opflex_agent:
                 - {get_param: OpflexAgentLoggingSource}
-              tripleo_logging_sources_opflex_mcast_agent:
                 - {get_param: McastAgentLoggingSource}
-              tripleo_logging_sources_opflex_supervisord:
                 - {get_param: OpflexSupervisordLoggingSource}
       puppet_config:
         config_volume: opflex

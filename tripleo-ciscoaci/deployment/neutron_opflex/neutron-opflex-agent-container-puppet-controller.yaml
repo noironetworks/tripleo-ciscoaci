@@ -49,6 +49,12 @@ parameters:
     default:
       tag: openstack.neutronopflex.controlleragent
       file: /var/log/containers/neutron/neutron-opflex-agent.log
+  NeutronOpflexSupervisordLoggingSource:
+    type: json
+    default:
+      tag: openstack.neutronopflex.supervisord
+      file: /var/log/containers/neutron/neutron-opflex-supervisord.log.1
+      startmsg.regex: "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(,[0-9]+)? (DEBG|INFO|WARN|CRIT) "
   NeutronBridgeMappings:
     description: >
       The OVS logical->physical bridge mappings to use. See the Neutron
@@ -120,6 +126,7 @@ outputs:
           - rsyslog:
               tripleo_logging_sources_neutron_opflex_controller_agent:
                 - {get_param: NeutronOpflexAgentLoggingSource}
+                - {get_param: NeutronOpflexSupervisordLoggingSource}
       puppet_config:
         config_volume: neutron_opflex
         puppet_tags:
