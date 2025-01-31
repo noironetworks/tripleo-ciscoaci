@@ -73,6 +73,19 @@ parameters:
       examples are: noop, openvswitch, iptables_hybrid. The default value of an
       empty string will result in a default supported configuration.
     type: string
+  NeutronOpflexEnableSnatConntrack:
+    default: true
+    description: Enable the SNAT connection track which will dump the
+      output to syslog.
+    type: boolean
+  NeutronOpflexSnatConntrackSeverity:
+    default: 'info'
+    description: The syslog severity used by opflex-conn-track program.
+    type: string
+  NeutronOpflexSnatConntrackFacility:
+    default: 'user'
+    description: The syslog facility used by opflex-conn-track program.
+    type: string
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
@@ -119,6 +132,9 @@ outputs:
           - get_attr: [RoleParametersValue, value]
           - neutron::agents::ml2::ovs::local_ip: {get_param: [ServiceNetMap, NeutronTenantNetwork]}
           - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: true
+          - ciscoaci::neutron_opflex::opflex_enable_snat_conn_track: {get_param NeutronOpflexEnableSnatConntrack}
+          - ciscoaci::neutron_opflex::opflex_conn_track_syslog_severity: {get_param NeutronOpflexSnatConntrackSeverity}
+          - ciscoaci::neutron_opflex::opflex_conn_track_syslog_facility: {get_param NeutronOpflexSnatConntrackFacility}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
