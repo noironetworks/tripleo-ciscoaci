@@ -42,6 +42,10 @@ parameters:
     default:
       tag: ciscoaci.lldp
       file: /var/log/containers/neutron/cisco-apic-host-agent.log
+  CiscoAciLldpdInterfaces:
+    default: '*,!tap*'
+    description: Interfaces that the LLDP daemon uses for LLDP discovery
+    type: string
 
 resources:
 
@@ -67,6 +71,9 @@ outputs:
           - rsyslog:
               tripleo_logging_sources_ciscoaci_lldp:
                 - {get_param: CiscoAciLldpLoggingSource}
+      config_settings:
+        map_merge:
+        - ciscoaci::lldp::lldpd_interfaces: {get_param: CiscoAciLldpdInterfaces}
       puppet_config:
         config_volume: neutron
         puppet_tags: 
