@@ -403,13 +403,13 @@ outputs:
                 path: "/var/lib/opflex/files/droplog/a.droplogcfg"
                 state: absent
 
-            - name: Enable droplog in iptables
+            - name: Enable droplog in NFT
               when: internal_droplog_enabled|bool
-              shell: iptables -t nat -A OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
+              shell: nft add rule ip nat OUTPUT udp dport 6081 dnat 127.0.0.1:50000
 
-            - name: Disable droplog in iptables
+            - name: Disable droplog in NFT
               when: not internal_droplog_enabled|bool
-              shell: iptables -t nat -D OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
+              shell: nft delete rule ip nat OUTPUT handle $(nft -a list table ip nat | grep 6081 | awk '{print $NF}')
               ignore_errors: true
 
             - name: Check for opflex restart directory
