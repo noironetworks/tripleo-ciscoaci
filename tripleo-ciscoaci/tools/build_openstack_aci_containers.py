@@ -39,8 +39,16 @@ def determine_ucloud_ip():
     else:
         return uip
 
+def file_repo_path(repotext):
+    lines = repotext.split("\n")
+    for line in lines:
+        if "baseurl" in line:
+            if line.split("=")[1].split(":")[0] == 'file':
+                return line.split("=")[1].split(":")[1][2:]
 
-def pull_containers(pushurl, container_name, arr, release_tag):
+def pull_containers(ucloud_ip, upstream_registry, regseparator,
+                     pushurl, pushtag, container_name, arr, repotext,
+                     license_text, release_tag):
     print("Pulling ACI %s container" % container_name)
     if "aci_container" in arr.keys():
         print("here")
@@ -61,6 +69,102 @@ def pull_containers(pushurl, container_name, arr, release_tag):
     print(cmd)
     subprocess.check_call(shlex.split(cmd))
 
+def build_containers(ucloud_ip, upstream_registry, regseparator,
+                     pushurl, pushtag, container_name, arr, repotext,
+                     license_text, release_tag, additional_repos, repo_tar_file,
+                     rhel_version):
+    print("Building ACI %s container" % container_name)
+
+    aci_pkgs = arr['packages']
+    docker_run_cmds = arr['run_cmds']
+    rhel_container = "%s%s%s:%s" % (upstream_registry, regseparator,
+                                    arr['rhel_container'], release_tag)
+    if "aci_container" in arr.keys():
+        aci_container = "%s/%s" %(pushurl, arr['aci_container'])
+    else:
+        aci_container = "%s/%s-ciscoaci" % (pushurl, arr['rhel_container'])
+
+    if 'user' in arr.keys():
+        user = arr['user']
+    else:
+        user = ''
+
+    if 'summary' in arr.keys():
+        summary = arr['summary']
+    else:
+        summary = ''
+
+    if 'description' in arr.keys():
+        description = arr['description']
+    else:
+        description = ''
+
+
+    d_user = subprocess.check_output(
+        ['podman', 'run', '--net=host', '--name', '%s-temp' % container_name, rhel_container, 'whoami'])
+    def_user = d_user.decode('utf-8').strip()
+
+    subprocess.check_call(["podman", "rm", '%s-temp' % container_name])
+
+    build_dir = tempfile.mkdtemp()
+    # We only need to copy the repo data over if we're using the tarball
+    source_path = '/opt/cisco_aci_repo' if repo_tar_file else file_repo_path(repotext)
+    if source_path:
+        shutil.copytree(source_path, '%s/opt/cisco_aci_repo' % build_dir)
+    repofile = os.path.join(build_dir, 'aci.repo')
+    with open(repofile, 'w') as fh:
+       fh.write(repotext)
+
+    license_file = os.path.join(build_dir, 'LICENSE.txt')
+    with open(license_file, 'w') as fh:
+       fh.write(license_text)
+
+    blob = """
+FROM %s
+MAINTAINER Cisco Systems
+LABEL name="%s" vendor="Cisco Systems" version="%s" release="1" summary="%s" \
+description="%s"
+USER root
+ENV no_proxy="${no_proxy},%s"
+       """ % (rhel_container, aci_container, release_tag, summary, description, ucloud_ip)
+    blob = blob + "RUN dnf --releasever=%s config-manager --enable openstack-%s-for-rhel-9-x86_64-rpms %s\n" % (rhel_version, ("17" if release_tag == "17.0" else release_tag),  additional_repos)
+    if source_path:
+        blob = blob + "ADD %s %s \n" % (source_path, source_path)
+    blob = blob + "Copy aci.repo /etc/yum.repos.d \n"
+    blob = blob + "RUN mkdir /licenses \n"
+    blob = blob + "Copy LICENSE.txt /licenses/ \n"
+    for cmd in docker_run_cmds:
+        blob = blob + "RUN %s \n" % cmd
+    blob = blob + "RUN dnf --releasever=%s -y update-minimal --security --sec-severity=Important --sec-severity=Critical && dnf clean all \n" % rhel_version
+    if user == '':
+        blob = blob + "USER \"\" \n"
+    else:
+        blob = blob + "USER %s \n" % user
+
+    dockerfile = os.path.join(build_dir, "Dockerfile")
+    with open(dockerfile, 'w') as df:
+        df.write(blob)
+
+    subprocess.check_call(["podman", "build", build_dir, "-t",
+                           "%s:%s" % (aci_container, pushtag)])
+
+    cmd ="openstack tripleo container image push --local %s:%s" % (aci_container, pushtag)
+    subprocess.check_call(shlex.split(cmd))
+
+    shutil.rmtree(build_dir)
+
+    subprocess.check_call(["podman", "rmi", rhel_container])
+
+    ccmd ="podman rmi %s:%s" % (aci_container, pushtag)
+    subprocess.check_call(shlex.split(ccmd))
+
+def count_rpm_files(tarball_path):
+    rpm_count = 0
+    with tarfile.open(tarball_path, "r:*") as tar:
+        for member in tar.getmembers():
+            if member.name.endswith('.rpm'):
+                rpm_count += 1
+    return rpm_count
 
 def main():
     timestamp = datetime.datetime.now().strftime('%s')
@@ -102,10 +206,7 @@ def main():
                       dest='additional_repos')
     parser.add_argument("--force", help="Override check for md5sum mismatch",
 	              dest='force', action='store_true')
-    parser.add_argument("-p", "--pull",
-                      help="Pull upstream containers instead of building locally",
-                      dest='pull',
-                      action='store_true')
+
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--aci_repo_file",
@@ -118,9 +219,19 @@ def main():
 		      type=extant_file,
 		      metavar="FILE",
                       help="Path to openstack-aci-rpms-repo tar file. This will be use to create a local yum repository on undercloud")
+    group_pull = parser.add_mutually_exclusive_group()
+    group_pull.add_argument("-p", "--pull",
+                      help="Pull upstream containers instead of building locally",
+                      dest='pull',
+                      default=True,
+                      action='store_true')
+    group_pull.add_argument("-b", "--build",
+                      help="Build containers locally (requires dev build)",
+                      default=False,
+                      dest='pull',
+                      action='store_false')   
 
     options = parser.parse_args()
-
 
     current_user = getpass.getuser()
     current_grp = grp.getgrgid(pwd.getpwnam('stack').pw_gid).gr_name
@@ -134,31 +245,71 @@ def main():
           sys.exit(1)
     else:
           ucloud_ip = options.ucloud_ip
+    repotext = ""
+    if not options.pull:
+        if options.repo_tar_file:
+            m=md5()
+            with open(options.repo_tar_file, 'rb') as fh:
+                data = fh.read()
+            m.update(data)
+            md5sum = m.hexdigest()
 
-    if options.repo_tar_file:
-       m=md5()
-       with open(options.repo_tar_file, 'rb') as fh:
-         data = fh.read()
-       m.update(data)
-       md5sum = m.hexdigest()
+            with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
+                expected_md5sum = fh.read()
 
-       with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
-           expected_md5sum = fh.read()
-
-       if not (md5sum == expected_md5sum.strip()):
-          if not options.force:
-             print("md5sum of provided tar file does not match with expected. Use --force to disable this check'")
-             sys.exit(1)
+            if not (md5sum == expected_md5sum.strip()):
+                if not options.force:
+                    print("md5sum of provided tar file does not match with expected. Use --force to disable this check'")
+                    sys.exit(1)
 
 
-       os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
-       os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
-       tf = tarfile.open(options.repo_tar_file)
-       tf.extractall('/var/lib/image-serve/v2/__acirepo')
-       os.system("createrepo /var/lib/image-serve/v2/__acirepo")
+            os.system("sudo rm -rf /opt/cisco_aci_repo")
+            rpm_files = count_rpm_files(options.repo_tar_file)
+            if rpm_files < 2:
+                print("The tar file is not a dev release, plaese contact support for obtaining the dev release.")
+                sys.exit(1)
+            os.system("sudo /usr/bin/mkdir -p /opt/cisco_aci_repo")
+            os.system("sudo chown {0} /opt/cisco_aci_repo".format(current_user))
+            os.system("sudo chgrp {0} /opt/cisco_aci_repo".format(current_grp))
+            tf = tarfile.open(options.repo_tar_file)
+            tf.extractall('/opt/cisco_aci_repo')
+            repotext = """
+[acirepo]
+name=aci repo
+baseurl=file:///opt/cisco_aci_repo
+enabled=1
+gpgcheck=0
+        """ 
+
+            os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
+            os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
+            os.system("cp /opt/cisco_aci_repo/ciscoaci-puppet-* /var/lib/image-serve/v2/__acirepo")
+            os.system("createrepo /var/lib/image-serve/v2/__acirepo")
+        else:
+            with open(options.aci_repo_file, 'r') as fh:
+                repotext = fh.read()
     else:
-       with open(options.aci_repo_file, 'r') as fh:
-          repotext = fh.read()
+        if options.repo_tar_file:
+            m=md5()
+            with open(options.repo_tar_file, 'rb') as fh:
+                data = fh.read()
+            m.update(data)
+            md5sum = m.hexdigest()
+
+            with open('/opt/ciscoaci-tripleo-heat-templates/tools/dist_md5sum') as fh:
+                expected_md5sum = fh.read()
+
+            if not (md5sum == expected_md5sum.strip()):
+                if not options.force:
+                    print("md5sum of provided tar file does not match with expected. Use --force to disable this check'")
+                    sys.exit(1)
+
+
+            os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
+            os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
+            tf = tarfile.open(options.repo_tar_file)
+            tf.extractall('/var/lib/image-serve/v2/__acirepo')
+            os.system("createrepo /var/lib/image-serve/v2/__acirepo")
 
     pushurl = None
     if options.destination_registry:
@@ -284,11 +435,19 @@ limitations under the License.
     for repo in options.additional_repos:
         additional_repos += "--enable %s " % repo
     if not options.pull:
-        print("Building containers locally is no longer available, this option will be removed, continuing to pull containers")
-    print("Will pull containers from upstream repo")
-    for container in containers_list:
-        pull_containers(pushurl, container, container_array[container], options.release_tag) 
-    mytag = options.release_tag
+        print("Will rebuild containers localy, this option requires a dev release and will fail if prod relrease is used")
+        for container in containers_list:
+            build_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
+                  options.tag, container, container_array[container], repotext, license_text,
+                  options.release_tag, additional_repos, options.repo_tar_file, rhel_version)
+        mytag = options.tag
+    else:
+        print("Will pull containers from upstream repo")
+        for container in containers_list:
+           pull_containers(ucloud_ip, options.upstream_registry, options.regseparator, pushurl,
+                  options.tag, container, container_array[container], repotext, license_text,
+                  options.release_tag) 
+        mytag = options.release_tag
 
     config_blob = "parameter_defaults:\n"
     for container in containers_list:
