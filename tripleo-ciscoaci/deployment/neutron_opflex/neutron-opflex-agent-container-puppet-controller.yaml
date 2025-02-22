@@ -216,28 +216,105 @@ outputs:
               command: ip netns delete ns_temp2
               ignore_errors: True
               when: ipnetns_add_result.rc == 0
-            - name: Check for opflex persistent directory structure
+            - name: Check for opflex endpoints directory
               stat:
-                path: /var/lib/opflex
-              register: opflex_path
-
-            - block:
-              - name: create persistent directories
-                file:
-                  path: "{{ item.path }}"
-                  state: directory
-                  setype: "{{ item.setype }}"
-                  mode: "{{ item.mode|default(omit) }}"
-                with_items:
-                  - { 'path': /var/lib/opflex/files/endpoints, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/files/services, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/files/ids, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/files/mcast, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/files/droplog, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/files/faults, 'setype': svirt_sandbox_file_t }
-                  - { 'path': /var/lib/opflex/sockets, 'setype': svirt_sandbox_file_t }
+                path: /var/lib/opflex/files/endpoints
+              register: opflex_path_endpoints
+            - name: create opflex endpoints directory
+              file:
+                path: /var/lib/opflex/files/endpoints
+                state: directory
+                setype: svirt_sandbox_file_t
               when:
-                - not opflex_path.stat.exists
+                - not  opflex_path_endpoints.stat.exists
+            - name: Check for opflex services directory
+              stat:
+                path: /var/lib/opflex/files/services
+              register: opflex_path_services
+            - name: create opflex services directory
+              file:
+                path: /var/lib/opflex/files/services
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_services.stat.exists
+            - name: Check for opflex ids directory
+              stat:
+                path: /var/lib/opflex/files/ids
+              register: opflex_path_ids
+            - name: create opflex ids directory
+              file:
+                path: /var/lib/opflex/files/ids
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_ids.stat.exists
+            - name: Check for opflex mcast directory
+              stat:
+                path: /var/lib/opflex/files/mcast
+              register: opflex_path_mcast
+            - name: create opflex mcast directory
+              file:
+                path: /var/lib/opflex/files/mcast
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_mcast.stat.exists
+            - name: Check for opflex droplog directory
+              stat:
+                path: /var/lib/opflex/files/droplog
+              register: opflex_path_droplog
+            - name: create opflex droplog directory
+              file:
+                path: /var/lib/opflex/files/droplog
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_droplog.stat.exists
+            - name: Check for opflex faults directory
+              stat:
+                path: /var/lib/opflex/files/faults
+              register: opflex_path_faults
+            - name: create opflex faults directory
+              file:
+                path: /var/lib/opflex/files/faults
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_faults.stat.exists
+            - name: Check for opflex policy directory
+              stat:
+                path: /var/lib/opflex/files/policy
+              register: opflex_path_policy
+            - name: create opflex policy directory
+              file:
+                path: /var/lib/opflex/files/policy
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_policy.stat.exists
+            - name: Check for opflex outofband directory
+              stat:
+                path: /var/lib/opflex/files/outofband
+              register: opflex_path_outofband
+            - name: create opflex outofband directory
+              file:
+                path: /var/lib/opflex/files/outofband
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_outofband.stat.exists
+            - name: Check for opflex sockets directory
+              stat:
+                path: /var/lib/opflex/files/sockets
+              register: opflex_path_sockets
+            - name: create opflex sockets directory
+              file:
+                path: /var/lib/opflex/files/sockets
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_sockets.stat.exists
 
             - name: Check for opflex restart directory
               stat:
