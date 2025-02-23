@@ -451,11 +451,11 @@ outputs:
                 - not  opflex_path_outofband.stat.exists
             - name: Check for opflex sockets directory
               stat:
-                path: /var/lib/opflex/files/sockets
+                path: /var/lib/opflex/sockets
               register: opflex_path_sockets
             - name: create opflex sockets directory
               file:
-                path: /var/lib/opflex/files/sockets
+                path: /var/lib/opflex/sockets
                 state: directory
                 setype: svirt_sandbox_file_t
               when:
