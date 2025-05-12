@@ -133,9 +133,9 @@ outputs:
               '298 opflex igmp accept':
                 proto: 'igmp'
           - ciscoaci::neutron_opflex::aci_disable_metadata_proxy: true
-          - ciscoaci::neutron_opflex::opflex_enable_snat_conn_track: {get_param NeutronOpflexEnableSnatConntrack}
-          - ciscoaci::neutron_opflex::opflex_conn_track_syslog_severity: {get_param NeutronOpflexSnatConntrackSeverity}
-          - ciscoaci::neutron_opflex::opflex_conn_track_syslog_facility: {get_param NeutronOpflexSnatConntrackFacility}
+          - ciscoaci::neutron_opflex::opflex_enable_snat_conn_track: {get_param: NeutronOpflexEnableSnatConntrack}
+          - ciscoaci::neutron_opflex::opflex_conn_track_syslog_severity: {get_param: NeutronOpflexSnatConntrackSeverity}
+          - ciscoaci::neutron_opflex::opflex_conn_track_syslog_facility: {get_param: NeutronOpflexSnatConntrackFacility}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
