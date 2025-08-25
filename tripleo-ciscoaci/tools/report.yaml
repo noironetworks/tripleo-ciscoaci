@@ -20,7 +20,7 @@
     loop: "{{ groups['Controller'] | default([]) }}"
     when: (limit_hosts | length == 0) or (item in limit_hosts)
 
-  - name: Add hosts to controllers group
+  - name: Add hosts to compute group
     ansible.builtin.add_host:
       name: "{{ item }}"
       groups: temp_computes
@@ -31,16 +31,19 @@
     add_host:
       name: "{{ item }}"
       groups: controllers
-    loop: "{{ groups['temp_controllers'] }}"
-    when: limit_flavors | length == 0 or 'controller' in limit_flavors
+    loop: "{{ groups['temp_controllers'] | default([]) }}"
+    when:
+      - groups['temp_controllers'] | default([]) | length > 0
+      - limit_flavors | length == 0 or 'controller' in limit_flavors
 
   - name: Copy hosts from temp_computes to computes group
     add_host:
       name: "{{ item }}"
       groups: computes
-    loop: "{{ groups['temp_computes'] }}"
-    when: limit_flavors | length == 0 or 'compute' in limit_flavors
-
+    loop: "{{ groups['temp_computes'] | default([]) }}"
+    when:
+      - groups['temp_computes'] | default([]) | length > 0
+      - limit_flavors | length == 0 or 'compute' in limit_flavors
 
   - name: create temp directory to collect data
     tempfile: 
