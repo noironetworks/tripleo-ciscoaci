@@ -223,6 +223,10 @@ parameters:
         Resolve using local policy only after connecting to peer, but
         just for the duration specified in OpflexStartupPolicyDuration.
     type: boolean
+  OpflexConnectTimeout:
+    default: 30
+    description: Time to wait for agent to connect to peers
+    type: number
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -281,6 +285,7 @@ outputs:
         - ciscoaci::opflex::opflex_startup_policy_file: {get_param: OpflexStartupPolicyFile}
         - ciscoaci::opflex::opflex_startup_policy_duration: {get_param: OpflexStartupPolicyDuration}
         - ciscoaci::opflex::opflex_startup_policy_after_connect: {get_param: OpflexResolvePolicyAfterConnect}
+        - ciscoaci::opflex::opflex_connect_timeout: {get_param: OpflexConnectTimeout}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
