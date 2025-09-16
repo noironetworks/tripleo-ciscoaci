@@ -351,7 +351,6 @@ outputs:
                   - /var/lib/config-data/puppet-generated/neutron/etc/neutron/metadata_agent.ini:/etc/neutron/metadata_agent.ini:ro
                   - /var/log/containers/opflex:/var/log/opflex
                   - /var/log/containers/neutron:/var/log/neutron
-                  - /var/run/openvswitch/:/var/run/openvswitch/:shared,z
                   - /run/netns:/run/netns:shared
                   - /lib/modules:/lib/modules:ro
                   - /var/lib/opflex/files:/var/lib/opflex-agent-ovs:shared,z
