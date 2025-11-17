@@ -96,6 +96,13 @@ parameters:
   ACIApicCertName:
     type: string
     default: ''
+  ACIApicCertificate:
+    type: string
+    default: ''
+    description: >
+      X.509 certificate content for APIC authentication.
+      Provide the full certificate in PEM format.
+      This file will be created at /etc/aim/<ACIApicCertName>
   ACIApicPrivateKey:
     type: string
     default: ''
@@ -194,6 +201,14 @@ parameters:
     type: boolean
     default: false
     description: Enable scoping of names with apic_system_id
+  AciVerifySslCertificate:
+    default: 'false'
+    description: >
+      SSL certificate verification for APIC connections.
+      Set to 'true' to verify using system CA bundle,
+      'false' to disable verification, or provide an absolute
+      path to a custom CA certificate bundle file.
+    type: string
   ACIScopeInfra:
     type: boolean
     default: false
@@ -341,6 +356,7 @@ outputs:
             ciscoaci::aim_config::aci_apic_username: {get_param: ACIApicUsername}
             ciscoaci::aim_config::aci_apic_password: {get_param: ACIApicPassword}
             ciscoaci::aim_config::aci_apic_certname: {get_param: ACIApicCertName}
+            ciscoaci::aim_config::aci_apic_certificate: {get_param: ACIApicCertificate}
             ciscoaci::aim_config::aci_apic_privatekey: {get_param: ACIApicPrivateKey}
             ciscoaci::aim_config::aci_apic_systemid: {get_param: ACIApicSystemId}
             ciscoaci::aim_config::aci_apic_systemid_length: {get_param: ACIApicSystemIdMaxLength}
@@ -382,6 +398,7 @@ outputs:
             ciscoaci::aim_config::rabbit_port: {get_param: RabbitClientPort}
             ciscoaci::aim_config::gen1_hw_gratarps: {get_param: AciGen1HwGratArps}
             ciscoaci::aim_config::enable_faults_subscriptions: {get_param: AciEnableFaultSubscription}
+            ciscoaci::aim_config::aci_verify_ssl_certificate: {get_param: AciVerifySslCertificate}
       # BEGIN DOCKER SETTINGS
       service_config_settings:
         map_merge:
