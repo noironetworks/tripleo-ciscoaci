@@ -227,6 +227,10 @@ parameters:
     default: 30
     description: Time to wait for agent to connect to peers
     type: number
+  OpflexConnectionMonitor:
+    default: true
+    description: Enable monitoring and recovery of opflex connections
+    type: boolean
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -286,6 +290,7 @@ outputs:
         - ciscoaci::opflex::opflex_startup_policy_duration: {get_param: OpflexStartupPolicyDuration}
         - ciscoaci::opflex::opflex_startup_policy_after_connect: {get_param: OpflexResolvePolicyAfterConnect}
         - ciscoaci::opflex::opflex_connect_timeout: {get_param: OpflexConnectTimeout}
+        - ciscoaci::opflex::opflex_conn_monitor: {get_param: OpflexConnectionMonitor}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
