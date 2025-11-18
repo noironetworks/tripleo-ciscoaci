@@ -481,19 +481,6 @@ outputs:
                 path: "/var/lib/opflex/files/droplog/a.droplogcfg"
                 state: absent
 
-            - name: Check for droplog rule in iptables
-              shell: iptables-nft -t nat --check OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
-              register: rule_present
-              ignore_errors: true
-
-            - name: Enable droplog in iptables
-              when: internal_droplog_enabled|bool and rule_present.stderr_lines
-              shell: iptables-nft -t nat -A OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
-
-            - name: Disable droplog in iptables
-              when: not internal_droplog_enabled|bool and not rule_present.stderr_lines
-              shell: iptables-nft -t nat -D OUTPUT -p udp --dport 6081 -j DNAT --to 127.0.0.1:50000
-
             - name: Check for opflex restart directory
               stat:
                 path: /var/lib/opflex/files/retarts
