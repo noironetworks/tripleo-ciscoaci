@@ -231,6 +231,13 @@ parameters:
     default: true
     description: Enable monitoring and recovery of opflex connections
     type: boolean
+  LimitMcastInterfaces:
+    type: boolean
+    default: true
+    description: >
+      When true, limit responses to IGMP multicast membership queries to just the VLAN
+      subinterface specified with ACIOpflexUplinkInterface.ACIApicInfraVlan. When false,
+      respond to IGMP multicast membership queries on all interfaces.
 resources:
   ContainersCommon:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/containers-common.yaml
@@ -291,6 +298,7 @@ outputs:
         - ciscoaci::opflex::opflex_startup_policy_after_connect: {get_param: OpflexResolvePolicyAfterConnect}
         - ciscoaci::opflex::opflex_connect_timeout: {get_param: OpflexConnectTimeout}
         - ciscoaci::opflex::opflex_conn_monitor: {get_param: OpflexConnectionMonitor}
+        - ciscoaci::opflex::opflex_limit_mcast_interfaces: {get_param: LimitMcastInterfaces}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
