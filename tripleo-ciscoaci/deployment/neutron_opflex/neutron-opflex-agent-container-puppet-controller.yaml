@@ -304,6 +304,17 @@ outputs:
                 setype: svirt_sandbox_file_t
               when:
                 - not  opflex_path_outofband.stat.exists
+            - name: Check for opflex snats directory
+              stat:
+                path: /var/lib/opflex/files/snats
+              register: opflex_path_snats
+            - name: create opflex snats directory
+              file:
+                path: /var/lib/opflex/files/snats
+                state: directory
+                setype: svirt_sandbox_file_t
+              when:
+                - not  opflex_path_snats.stat.exists
             - name: Check for opflex sockets directory
               stat:
                 path: /var/lib/opflex/sockets
