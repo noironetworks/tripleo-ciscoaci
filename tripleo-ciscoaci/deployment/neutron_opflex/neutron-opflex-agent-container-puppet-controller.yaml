@@ -92,6 +92,18 @@ parameters:
       The interface to use for policy based redirect traffic when distributed
       SNAT is used.
     type: string
+  NeutronOpflexDistSnatZoneMin:
+    default: 10000
+    description: |
+      The minimum value to use for connection tracking zone allocation for
+      distributed SNAT.
+    type: number
+  NeutronOpflexDistSnatZoneMax:
+    default: 8191
+    description: |
+      The maximum value to use for connection tracking zone allocation for
+      distributed SNAT.
+    type: number
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
@@ -142,6 +154,8 @@ outputs:
           - ciscoaci::neutron_opflex::opflex_conn_track_syslog_severity: {get_param: NeutronOpflexSnatConntrackSeverity}
           - ciscoaci::neutron_opflex::opflex_conn_track_syslog_facility: {get_param: NeutronOpflexSnatConntrackFacility}
           - ciscoaci::neutron_opflex::neutron_opflex_snat_iface: {get_param: NeutronOpflexDistSnatInterface}
+          - ciscoaci::neutron_opflex::neutron_opflex_snat_zone_min: {get_param: NeutronOpflexDistSnatZoneMin}
+          - ciscoaci::neutron_opflex::neutron_opflex_snat_zone_max: {get_param: NeutronOpflexDistSnatZoneMax}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
