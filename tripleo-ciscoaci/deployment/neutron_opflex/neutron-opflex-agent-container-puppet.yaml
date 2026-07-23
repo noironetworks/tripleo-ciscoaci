@@ -80,6 +80,12 @@ parameters:
     default: 'user'
     description: The syslog facility used by opflex-conn-track program.
     type: string
+  NeutronOpflexDistSnatInterface:
+    default: 'patch-fab-ex'
+    description: |
+      The interface to use for policy based redirect traffic when distributed
+      SNAT is used.
+    type: string
 resources:
   NeutronBase:
     type: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-base.yaml
@@ -129,6 +135,7 @@ outputs:
           - ciscoaci::neutron_opflex::opflex_enable_snat_conn_track: {get_param: NeutronOpflexEnableSnatConntrack}
           - ciscoaci::neutron_opflex::opflex_conn_track_syslog_severity: {get_param: NeutronOpflexSnatConntrackSeverity}
           - ciscoaci::neutron_opflex::opflex_conn_track_syslog_facility: {get_param: NeutronOpflexSnatConntrackFacility}
+          - ciscoaci::neutron_opflex::neutron_opflex_snat_iface: {get_param: NeutronOpflexDistSnatInterface}
       service_config_settings:
         map_merge:
           - get_attr: [NeutronBase, role_data, service_config_settings]
