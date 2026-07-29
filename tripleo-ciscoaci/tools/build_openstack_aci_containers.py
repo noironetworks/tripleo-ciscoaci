@@ -273,6 +273,8 @@ def main():
             os.system("sudo chgrp {0} /opt/cisco_aci_repo".format(current_grp))
             tf = tarfile.open(options.repo_tar_file)
             tf.extractall('/opt/cisco_aci_repo')
+            os.system(f"sudo find /opt/cisco_aci_repo -type d -exec chmod 755 {{}} +")
+            os.system(f"sudo find /opt/cisco_aci_repo -type f -exec chmod 644 {{}} +")
             repotext = """
 [acirepo]
 name=aci repo
@@ -281,10 +283,19 @@ enabled=1
 gpgcheck=0
         """ 
 
-            os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
-            os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
-            os.system("cp /opt/cisco_aci_repo/ciscoaci-puppet-* /var/lib/image-serve/v2/__acirepo")
-            os.system("createrepo /var/lib/image-serve/v2/__acirepo")
+            repo_path = "/var/lib/image-serve/v2/__acirepo"
+            os.system(f"sudo rm -rf {repo_path}")
+            os.system(f"sudo mkdir -p {repo_path}")
+            os.system(f"sudo chmod 755 {repo_path}")
+
+            os.system(f"sudo cp /opt/cisco_aci_repo/ciscoaci-puppet-* {repo_path}")
+
+            os.system(f"sudo chmod 644 {repo_path}/ciscoaci-puppet-*")
+
+            os.system(f"sudo createrepo {repo_path}")
+
+            os.system(f"sudo chmod -R 755 {repo_path}/repodata")
+
         else:
             with open(options.aci_repo_file, 'r') as fh:
                 repotext = fh.read()
@@ -305,11 +316,21 @@ gpgcheck=0
                     sys.exit(1)
 
 
-            os.system("sudo rm -rf /var/lib/image-serve/v2/__acirepo")
-            os.system("sudo mkdir -p /var/lib/image-serve/v2/__acirepo")
-            tf = tarfile.open(options.repo_tar_file)
-            tf.extractall('/var/lib/image-serve/v2/__acirepo')
-            os.system("createrepo /var/lib/image-serve/v2/__acirepo")
+            repo_path = "/var/lib/image-serve/v2/__acirepo"
+
+            os.system(f"sudo rm -rf {repo_path}")
+            os.system(f"sudo mkdir -p {repo_path}")
+            os.system(f"sudo chmod 755 {repo_path}")
+
+            with tarfile.open(options.repo_tar_file) as tf:
+                tf.extractall(repo_path)
+
+            os.system(f"sudo find {repo_path} -type d -exec chmod 755 {{}} +")
+            os.system(f"sudo find {repo_path} -type f -exec chmod 644 {{}} +")
+
+            os.system(f"sudo createrepo {repo_path}")
+
+            os.system(f"sudo chmod -R 755 {repo_path}/repodata")
 
     pushurl = None
     if options.destination_registry:
